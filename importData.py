@@ -10,7 +10,13 @@ class proDataImporter():
 		self.Path = Path if not Path is None else "/Users/chris_egersdoerfer/Desktop/Strava-ProData"
 
 	def getAllActivities(self):
-		"""This method returns all activities in all athlete folders in the pro data directory"""
+		"""
+			This method gets all activities of all athletes in the given strava data directory
+
+			Return:
+				activities: (dict) collection of all dataframes for each athlete where each 
+				key is the name of an athlete and each value is the repective list of activities
+		"""
 		activities = {}
 		athletes = os.listdir(self.Path)
 		athletes.remove(".DS_Store")
@@ -24,6 +30,17 @@ class proDataImporter():
 		return activities
 
 	def getAllGenderedActivities(self, gender):
+		"""
+			This method gets all activities of all athletes of a certain gender 
+
+			Args:
+				gender: (str) represents the desired gender for output
+
+			Return:
+				activities: (dict) collection of all dataframes for each athlete of the desired 
+				gender where each key is the name of the athlete and each value is the respective list of activities
+
+		"""
 		if gender.lower() != "male" and gender.lower() != "female":
 			print("Enter a valid gender (male/female)")
 		genderSortedFiles = []
@@ -44,6 +61,15 @@ class proDataImporter():
 
 
 	def getSingleAthleteActivities(self, athlete):
+		"""
+			This method parses all gpx files of a single athlete to individual pandas dataframes
+
+			Args:
+				Athlete: (str) represents the desired athlete
+
+			Return: 
+				dataframes: (list) collection of dataframes containing one for each activity of the given athlete
+		"""
 		athletePath = self.Path + '/' + athlete
 		gpxFiles = os.listdir(athletePath)
 		try:
@@ -57,6 +83,16 @@ class proDataImporter():
 		return dataframes
 
 	def getRandomActivitiesByGender(self, gender, sampleSize = 10):
+		"""
+			This method gets a random sample of activities of a certain gender
+
+			Args:
+				gender: (str) represents the desired gender
+				sampleSize: (int) represents the amount of activities to be returned in the sample
+
+			Return:
+				selectedActivites: (list) collection of randomly selected dataframes of a specified gender
+		"""
 		allGenderedActivities = self.getAllGenderedActivities(gender)
 		summedActivities = []
 		for athlete in allGenderedActivities:
@@ -76,10 +112,45 @@ class proDataImporter():
 		
 		return selectedActivities
 
-	def getRandomActivityByAthlete(self, athlete):
-		pass
+	def getRandomActivitiesByAthlete(self, athlete, sampleSize = 1):
+		"""
+			This method gets a random sample of activities of a specified athlete
+
+			Args:
+				athlete: (str) name of the desired athlete
+				sampleSize: (int) represents the amount of activities to be returned in the sample
+
+			Return:
+				selectedActivites: (list) collection of randomly selected dataframes of a specified athlete
+
+		"""
+		allActivities = self.gethSingleAthleteActivities(athlete)
+
+		if sampleSize > len(allActivities):
+			print("Sample size larger than activities population")
+		else:
+			selectedIndexes = random.sample(range(0, len(allActivities)), sampleSize)
+
+		selectedActivities =[]
+		for index in selectedIndexes:
+			selectedActivities.append(allActivities[index])
+
+		return selectedActivities
+
+
 
 	def parseGpx(self, dir, files = []):
+		"""
+			This method parses all activity files in the directory from gpx format to csv format
+
+			Args:
+				dir: (str) directory of the files to be parsed
+				files: (list) a collection of files to be parsed in the specified directory
+
+			Return:
+				parsed_files: (list) a collection of lists containing a separate dictionary for each datapoint. 
+				Each list within the parsed_files list represents the datapoints of a separate file.
+		"""
 		if len(files) == 0:
 			files = self.getAllActivites()
 
@@ -107,6 +178,16 @@ class proDataImporter():
 		return parsed_files
 
 	def writeDataframes(self, parsed_list):
+		"""
+			This method creates a collection of pandas dataframes from a list of files in the form returned by the parseGpx method
+
+			Args:
+				parsed_list: (list) a collection of lists where each list represents all datapoints of a strava gpx files
+
+			Return:
+				dataframes: (list) a collection of pandas dataframes, where each dataframe contains the datapoints of a separate gpx file
+
+		"""
 		dataframes = []
 		for data in parsed_list:
 			new_dataframe = pd.DataFrame(data)
