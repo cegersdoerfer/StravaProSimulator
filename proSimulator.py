@@ -4,8 +4,11 @@ import pandas as pd
 import traceback
 import csv
 import random
+import math
+from geopy import distance
+import haversine
 
-class proDataImporter():
+class ProDataSimulator():
 	def __init__(self, Path = None):
 		self.Path = Path if not Path is None else "/Users/chris_egersdoerfer/Desktop/Strava-ProData"
 
@@ -195,6 +198,61 @@ class proDataImporter():
 
 		return dataframes
 
+	def findTotalHaversineDistance(self, dataframe):
+
+		for i in range(len(dataframe)):
+			if index == 0:
+				pass
+			else:
+				pStart = dataframe[i-1]
+				pEnd = dataframe[i]
+
+
+
+	def findTotalVincentyDistance(self):
+		pass
+
+	def findTotalElevationGain(self):
+		pass
+
+	def findTotalElevationLoss(self):
+		pass
+
+	def findAverageSlope(self):
+		pass
+
+	def findSteepSections(self, sectionCount):
+		"""
+		returns a list of ones or zeroes to indicate where in the track 
+		"""
+		pass
+
+	def findAvgSpeed(self):
+		pass
+
+	def findTotalTime(self):
+		pass
+
+	def findTurnFrequency(self):
+		"""
+		
+		"""
+		pass
+
+	def analyzeAllTurnsOfAthlete
+
+	def findEstimatedExertion(self):
+		pass
+
+	def findFastestInterval(self):
+		pass
+
+	def findIntervalAvgSpeed(self):
+		pass
+
+	def findIntervalElevationGain(self):
+		pass
+
 	"""
 	def writeCSV(self, parsed_list, athlete):
 		for data in parsed_list:
@@ -232,7 +290,7 @@ class proDataImporter():
 #gpxpy.parse("Afternoon_Ride_NOBOM.gpx")
 
 
-test = proDataImporter()
+test = proDataSimulator()
 #print(len(test.getAllActivities()))
 #print(len(test.getAllGenderedActivities("female")))
 print(len(test.getRandomActivitiesByGender("female")))
