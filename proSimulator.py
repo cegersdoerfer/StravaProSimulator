@@ -100,33 +100,26 @@ class ProDataSimulator():
 		summedActivities = {}
 		athletes = os.listdir(self.Path)
 		for athlete in athletes:
-			if gender.lower() == "male" and "male" in athlete:
-				activities = self.Path + '/' + athlete
-				activities_list = os.listdir(activities)
-				try:
-					activities_list.remove(".DS_Store")
-				except:
-					pass
-				for activity in activities_list:
-					summedActivities[activity] = athlete
-			elif gender.lower() == "female" and "female" in athlete:
-				activities = self.Path + '/' + athlete
-				activities_list = os.listdir(activities)
-				try:
-					activities_list.remove(".DS_Store")
-				except:
-					pass
-				for activity in activities_list:
-					summedActivities[activity] = athlete
-
-		"""
-		allGenderedActivities = self.getAllGenderedActivities(gender)
-		for athlete in allGenderedActivities:
-			for i in allGenderedActivities[athlete]:
-				summedActivities.append(i)
-		"""
-
-		print(len(summedActivities))
+			if "female" in athlete:
+				if gender.lower() == "female":
+					activities = self.Path + '/' + athlete
+					activities_list = os.listdir(activities)
+					try:
+						activities_list.remove(".DS_Store")
+					except:
+						pass
+					for activity in activities_list:
+						summedActivities[activity] = athlete
+			elif "male" in athlete:
+				if gender.lower() == "male":
+					activities = self.Path + '/' + athlete
+					activities_list = os.listdir(activities)
+					try:
+						activities_list.remove(".DS_Store")
+					except:
+						pass
+					for activity in activities_list:
+							summedActivities[activity] = athlete
 
 		while sampleSize > len(summedActivities):
 			print("Sample size larger than activities population. The Population is " + str(len(summedActivities)) + " activities.")
@@ -241,9 +234,111 @@ class ProDataSimulator():
 
 		return dataframes
 
+	def findAllMeasures(self, dataframe, formula = "vincenty", 
+						includeElevation = True, Distance = True, 
+						ElevationGain = True, ElevationLoss = True, 
+						Time = True, Speed = True, columnLabels = None):
+		dist = [0]
+		e_gain = [0]
+		e_loss = [0]
+		time_measure = [0]
+		speed_measure = [0]
+
+		for i in range(len(dataframe)):
+			if i == 0:
+				pass
+			else:
+				pStart = dataframe.iloc[i-1]
+				pEnd = dataframe.iloc[i]
+
+				if formula == "haversine":
+					calculated_distance = haversine.haversine(
+															(pStart.Latitude, pStart.Longitude), 
+															(pEnd.Latitude, pEnd.Longitude)) * 1000
+				elif formula == "vincenty":
+					calculated_distance = distance.geodesic(
+															(pStart.Latitude, pStart.Longitude), 
+															(pEnd.Latitude, pEnd.Longitude)).m
+				else:
+					raise ValueError("invalid formula. Enter either 'vincenty' or 'haversine'"
+									" for fomula parameter, or accept default value 'haversine'.")
+				if includeElevation:
+					calculated_distance = math.sqrt(calculated_distance**2 +(pEnd.Elevation - pStart.Elevation)**2)
+
+				if ElevationGain:
+					elev_dif = pEnd.Elevation - pStart.Elevation
+
+					if elev_dif > 0:
+						e_gain.append(e_gain[-1] + elev_dif)
+					else:
+						e_gain.append(e_gain[-1])
+
+				if ElevationLoss:
+					elev_dif = pEnd.Elevation - pStart.Elevation
+
+					if elev_dif < 0:
+						e_loss.append(e_loss[-1] + abs(elev_dif))
+					else:
+						e_loss.append(e_loss[-1])
+
+				if Time:
+					if i > 1:
+						time_dif = (pEnd.Time - pStart.Time).total_seconds()
+						time_measure.append(time_measure[-1] + time_dif)
+					else:
+						time_measure.append(0)
+
+				if Speed:
+					if i > 1:
+						time_dif = (pEnd.Time - pStart.Time).total_seconds()
+						speed = calculated_distance / time_dif
+						speed_measure.append(speed)
+					else:
+						speed_measure.append(0)
+
+				dist.append(dist[-1] + calculated_distance)
+
+		if Distance:
+			if columnLabels != None:
+				dataframe[columnLabels[0]] = dist
+			elif formula == "haversine":
+				if includeElevation:
+					dataframe["3dHavDistance"] = dist
+				else:
+					dataframe["2dHavDistance"] = dist
+			else:
+				if includeElevation:
+					dataframe["3dVinDistance"] = dist
+				else:
+					dataframe["2dVinDistance"] = dist
+		if ElevationGain:
+			if columnLabels != None:
+				dataframe[columnLabels[1]] = e_gain
+			else:
+				dataframe["ElevationGain"] = e_gain
+
+		if ElevationLoss:
+			if columnLabels != None:
+				dataframe[columnLabels[2]] = e_loss
+			else:
+				dataframe["ElevationLoss"] = e_loss
+
+		if Time:
+			if columnLabels != None:
+				dataframe[columnLabels[3]] = time_measure
+			else:
+				dataframe["Time"] = time_measure
+
+		if Speed:
+			if columnLabels != None:
+				dataframe[columnLabels[4]] = speed_measure
+			else:
+				dataframe["Speed"] = speed_measure
+
+		return dataframe
 
 
-	def findTotalDistance(self, dataframe, formula = "vincenty", includeElevation = True):
+	def findTotalDistance(self, dataframe, formula = "vincenty", includeElevation = True, columnLabel = None):
 		dist = [0]
 		for i in range(len(dataframe)):
 			if i == 0:
@@ -270,7 +365,9 @@ class ProDataSimulator():
 
 				dist.append(dist[-1] + calculated_distance)
 
-		if formula == "haversine":
+		if columnLabel != None:
+			dataframe[columnLabel] = dist
+		elif formula == "haversine":
 			if includeElevation:
 				dataframe["3dHavDistance"] = dist
 			else:
@@ -285,7 +382,7 @@ class ProDataSimulator():
 
 
 
-	def findTotalElevationGain(self, dataframe):
+	def findTotalElevationGain(self, dataframe, columnLabel = None):
 		elev = [0]
 
 		for i in range(len(dataframe)):
@@ -301,14 +398,17 @@ class ProDataSimulator():
 					elev.append(elev[-1] + elev_dif)
 				else:
 					elev.append(elev[-1])
-		dataframe["elevationGain"] = elev
+		if columnLabel != None:
+			dataframe[columnLabel] = elev
+		else:
+			dataframe["elevationGain"] = elev
 
 		return elev[-1]
 
 
 
 
-	def findTotalElevationLoss(self, dataframe):
+	def findTotalElevationLoss(self, dataframe, columnLabel = None):
 		elev = [0]
 
 		for i in range(len(dataframe)):
@@ -324,7 +424,10 @@ class ProDataSimulator():
 					elev.append(elev[-1] + abs(elev_dif))
 				else:
 					elev.append(elev[-1])
-		dataframe["elevationLoss"] = elev
+		if columnLabel != None:
+			dataframe[columnLabel] = elev
+		else:
+			dataframe["elevationLoss"] = elev
 
 		return elev[-1]
 
@@ -396,10 +499,10 @@ class ProDataSimulator():
 				angle_diff = newAngle - referenceAngle
 				sumAngle += angle_diff
 				if(angle_diff > threshold):
-					while angle_diff > threshold:
-						turns[-1].append(points[newPointEnd])
-						turns[-1].append(newAngle)
+					while (angle_diff > threshold) and (newPointEnd < len(points)-1):
 						try:
+							turns[-1].append(points[newPointEnd])
+							turns[-1].append(newAngle)
 							newPointStart += 1
 							newPointEnd += 1
 							newAngle = self.findCourse(points[newPointStart], points[newPointEnd])
@@ -411,14 +514,16 @@ class ProDataSimulator():
 								i = newPointEnd
 								turns[-1].append(sumAngle)
 
+							
+
 						except IndexError:
 							i = len(points)
 
 				elif angle_diff < (-1 * threshold):
-					while angle_diff < (-1 * threshold):
-						turns[-1].append(points[newPointEnd])
-						turns[-1].append(newAngle)
+					while (angle_diff < (-1 * threshold)) and (newPointEnd < len(points)-1):
 						try:
+							turns[-1].append(points[newPointEnd])
+							turns[-1].append(newAngle)
 							newPointStart += 1
 							newPointEnd += 1
 							newAngle = self.findCourse(points[newPointStart], points[newPointEnd])
@@ -430,6 +535,7 @@ class ProDataSimulator():
 								i = newPointEnd
 								turns[-1].append(sumAngle)
 
+							
 
 						except IndexError:
 							i = len(points)
@@ -525,25 +631,6 @@ class ProDataSimulator():
 					#if len(currentInterval)
 
 
-
-
-
-		
-	"""
-	def writeCSV(self, parsed_list, athlete):
-		for data in parsed_list:
-			f = open("sample.csv", "w")
-			writer = csv.DictWriter(
-			    f, fieldnames=["fruit", "count"])
-			writer.writeheader()
-			writer.writerows(
-			    [{"fruit": "apple", "count": "1"},
-			    {"fruit": "banana", "count": "2"}])
-			f.close()
-
-	"""
-
-
 #gpx = gpxpy.parse("/Users/chris_egersdoerfer/Desktop/Strava-ProData/Alex Dowsett - male/strava.activities.2963997118.Morning-Ride.gpx")
 #print(gpx)
 
@@ -579,12 +666,12 @@ if __name__ == '__main__':
 	for i in activity:
 		print(activity[i])
 		dis = test.findTotalDistance(activity[i])
-		"""
+
 		print("haversine 2d distance: " + str(test.findTotalDistance(activity[i], includeElevation = False)))
 		print("haversine 3d distance: " + str(test.findTotalDistance(activity[i])))
 		print("vincenty 2d distance: " + str(test.findTotalDistance(activity[i], formula = "vincenty", includeElevation = False)))
 		print("vincenty 3d distance: " + str(test.findTotalDistance(activity[i], formula = "vincenty")))
-		"""
+
 		gain = test.findTotalElevationGain(activity[i])
 		print("elevation gain: " + str(gain))
 		loss = test.findTotalElevationLoss(activity[i])
