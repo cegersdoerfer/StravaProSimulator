@@ -54,45 +54,48 @@ def create_csv(all_activities, filePath = "/Users/chris_egersdoerfer/Desktop/pro
 
 pds = ProDataSimulator("/Users/chris_egersdoerfer/Desktop/Strava-ProData")
 
-all_activities = pds.getRandomActivitiesByGender("male", 60)
+all_activities = pds.getRandomActivitiesByGender("male", 25)
 activities_df = create_csv(all_activities, "/Users/chris_egersdoerfer/Desktop/proData-csv/test_male_30")
 
 fig = plt.figure()
 
 ax1 = fig.add_subplot(331)
 ax1.scatter(activities_df['e_gain'], activities_df['time']/60)
-ax1.xlabel('e_gain')
-ax1.ylabel("time")
+#ax1.scatter(activities_df['e_gain'], activities_df['avgSpeed']**2)
+
 
 ax2 = fig.add_subplot(332)
 ax2.scatter(activities_df['e_loss'], activities_df['time']/60)
-ax1.xlabel('e_loss')
-ax1.ylabel("time")
+#ax2.scatter(activities_df['e_loss'], activities_df['avgSpeed']**2)
+
 
 ax3 = fig.add_subplot(333)
 ax3.scatter(activities_df['distance'], activities_df['time']/60)
-ax1.xlabel('distance')
-ax1.ylabel("time")
+#ax3.scatter(activities_df['distance'], activities_df['avgSpeed']**2)
+
 
 ax4 = fig.add_subplot(334)
 ax4.scatter(activities_df['avgSpeed'], activities_df['time']/60)
-ax1.xlabel('avgSpeed')
-ax1.ylabel("time")
+#ax4.scatter(activities_df['avgSpeed'], activities_df['avgSpeed']**2)
+
 
 ax5 = fig.add_subplot(335)
 ax5.scatter(activities_df['turns'], activities_df['time']/60)
-ax1.xlabel('turns')
-ax1.ylabel("time")
+#ax5.scatter(activities_df['turns'], activities_df['avgSpeed']**2)
+
 
 ax6 = fig.add_subplot(336)
 ax6.scatter(activities_df['avgTurnDegree'], activities_df['time']/60)
-ax1.xlabel('avgTurnDegree')
-ax1.ylabel("time")
+#ax6.scatter(activities_df['avgTurnDegree'], activities_df['avgSpeed']**2)
+
 
 ax7 = fig.add_subplot(337)
 ax7.scatter(activities_df['avgTurnLength'], activities_df['time']/60)
-ax1.xlabel('avgTurnLength')
-ax1.ylabel("time")
+#ax7.scatter(activities_df['avgTurnLength'], activities_df['avgSpeed']**2)
+
+ax8 = fig.add_subplot(338)
+ax8.scatter(activities_df['e_gain']/activities_df['distance'], activities_df['time']/60)
+
 
 plt.show()
 
