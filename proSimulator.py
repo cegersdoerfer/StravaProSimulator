@@ -237,12 +237,14 @@ class ProDataSimulator():
 	def findAllMeasures(self, dataframe, formula = "vincenty", 
 						includeElevation = True, Distance = True, 
 						ElevationGain = True, ElevationLoss = True, 
-						Time = True, Speed = True, columnLabels = None):
+						Time = True, Speed = True, Slope = True,
+						columnLabels = None):
 		dist = [0]
 		e_gain = [0]
 		e_loss = [0]
 		time_measure = [0]
 		speed_measure = [0]
+		slope_measure = [0]
 
 		for i in range(len(dataframe)):
 			if i == 0:
@@ -265,17 +267,15 @@ class ProDataSimulator():
 				if includeElevation:
 					calculated_distance = math.sqrt(calculated_distance**2 +(pEnd.Elevation - pStart.Elevation)**2)
 
-				if ElevationGain:
-					elev_dif = pEnd.Elevation - pStart.Elevation
+				elev_dif = pEnd.Elevation - pStart.Elevation
 
+				if ElevationGain:
 					if elev_dif > 0:
 						e_gain.append(e_gain[-1] + elev_dif)
 					else:
 						e_gain.append(e_gain[-1])
 
 				if ElevationLoss:
-					elev_dif = pEnd.Elevation - pStart.Elevation
-
 					if elev_dif < 0:
 						e_loss.append(e_loss[-1] + abs(elev_dif))
 					else:
@@ -295,6 +295,15 @@ class ProDataSimulator():
 						speed_measure.append(speed)
 					else:
 						speed_measure.append(0)
+
+				if Slope:
+					if calculated_distance != 0:
+						delta = elev_dif / calculated_distance 
+					else:
+						delta = 0
+					slope_measure.append(delta)
+
+
 
 				dist.append(dist[-1] + calculated_distance)
 
@@ -334,6 +343,12 @@ class ProDataSimulator():
 				dataframe[columnLabels[4]] = speed_measure
 			else:
 				dataframe["Speed"] = speed_measure
+
+		if Slope:
+			if columnLabels != None:
+				dataframe[columnLabels[5]] = slope_measure
+			else:
+				dataframe['Slope'] = slope_measure
 
 		return dataframe
 
@@ -483,13 +498,16 @@ class ProDataSimulator():
 		turnLength = 0
 		prevAngleDiff = 0
 		turns = []
+		preceding_slope = []
 		
 		i = 0
 		while i < len(points)-1:
 			turns.append([])
+			preceding_slope.append(0)
 			sumAngle = 0
 			if i < 2:
 				pass
+				startPoint = 0
 			else:
 				startPoint = i-2
 				newPointStart = i-1
@@ -513,6 +531,7 @@ class ProDataSimulator():
 							if angle_diff < threshold:
 								i = newPointEnd
 								turns[-1].append(sumAngle)
+								preceding_slope[-1] = startPoint
 
 							
 
@@ -534,6 +553,7 @@ class ProDataSimulator():
 							if angle_diff > (-1*threshold):
 								i = newPointEnd
 								turns[-1].append(sumAngle)
+								preceding_slope.append(startPoint)
 
 							
 
@@ -541,8 +561,23 @@ class ProDataSimulator():
 							i = len(points)
 			if turns[-1] == [] or len(turns[-1]) <= (minLength * 2 + 1):
 				del turns[-1]
+				del preceding_slope[-1]
+				
 			i+=1
-		return turns
+		return [turns, preceding_slope]
+
+	def findPrecedingSlope(self, turnLocations, dataframe, search_slope_threshold = 5):
+		avgSlopes = []
+		for turnLoc in turnLocations:
+			if turnLoc > search_slope_threshold:
+				pointRange = dataframe.iloc[turnLoc-search_slope_threshold:turnLoc+1, -1]
+				totalPRSlope = 0
+				for point in pointRange:
+					totalPRSlope += point
+				avgPRSlope = totalPRSlope / len(pointRange)
+				avgSlopes.append(avgPRSlope)
+		return avgSlopes
+
 
 
 
@@ -696,16 +731,16 @@ if __name__ == '__main__':
 			row = activity[i].iloc[r]
 			points.append([row.Longitude, row.Latitude])
 		turns = test.findTurns(points, threshold = 20, minLength = 1)
-		print("amount of turns: " + str(len(turns)))
+		print("amount of turns: " + str(len(turns[0])))
 
 
 		s = 0
 		degree = 0
-		for turn in turns:
+		for turn in turns[0]:
 			s += len(turn)
 			degree += abs(turn[-1])
 		avgDegree = degree/len(turns)
-		avgLength = s/len(turns)
+		avgLength = s/len(turns[0])
 		print("average length of turns: " + str(avgLength))
 		print("average degree of turns: " + str(avgDegree))
 		print("average distance of points: " + str(dis / len(activity[i])))
@@ -715,9 +750,5 @@ if __name__ == '__main__':
 
 		print("FINISHED CALCULATIONS FOR: " + str(i))
 		print("\n" + "--------------------------------------" + "\n")
-
-
-
-
 
 
