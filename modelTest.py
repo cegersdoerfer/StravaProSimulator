@@ -63,7 +63,6 @@ print('Mean Squared Error:', math.sqrt(metrics.mean_squared_error(y_test, result
 
 """
 
-
 scale_x= StandardScaler()
 scale_y= StandardScaler()
 
