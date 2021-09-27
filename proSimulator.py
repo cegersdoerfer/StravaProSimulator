@@ -629,43 +629,6 @@ class ProDataSimulator():
 		return intervals
 
 
-	def FindFastestSetLengthInterval(self, track, intervalLength = 10000, formula = "vincenty", includeElevation = True):
-		"""
-
-		"""
-		intervalStart = 0
-		pointCount = 0
-		shortestInterval = 0
-		for i in range(len(track)):
-			if i == 0:
-				pass
-			else:
-				pStart = dataframe.iloc[i-1]
-				pEnd = dataframe.iloc[i]
-
-				if distanceFormula == "haversine":
-					calculated_distance = haversine.haversine(
-															(pStart.Latitude, pStart.Longitude), 
-															(pEnd.Latitude, pEnd.Longitude)) * 1000
-				elif formula == "vincenty":
-					calculated_distance = distance.geodesic(
-															(pStart.Latitude, pStart.Longitude), 
-															(pEnd.Latitude, pEnd.Longitude)).m
-				else:
-					raise ValueError("invalid formula. Enter either 'vincenty' or 'haversine'"
-									"for fomula parameter, or accept default value 'haversine'.")
-
-
-				if includeElevation:
-					calculated_distance = math.sqrt(calculated_distance**2 +(pEnd.Elevation - pStart.Elevation)**2)
-
-				dist.append(dist[-1] + calculated_distance)
-
-				if dist[-1] > intervalLength:
-					currentInterval = track.iloc[intervalStart:i+1, :]
-					#if len(currentInterval)
-
-
 #gpx = gpxpy.parse("/Users/chris_egersdoerfer/Desktop/Strava-ProData/Alex Dowsett - male/strava.activities.2963997118.Morning-Ride.gpx")
 #print(gpx)
 

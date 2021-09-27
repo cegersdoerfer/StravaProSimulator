@@ -7,7 +7,7 @@ import math
 
 
 
-activities_df = pd.read_csv("/Users/chris_egersdoerfer/Desktop/proData-csv/test_all_male")
+activities_df = pd.read_csv("/Users/chris_egersdoerfer/Desktop/proData-csv/test_all_male_intervals")
 
 scale= StandardScaler()
 
@@ -29,13 +29,13 @@ ax3.scatter(activities_df['distance'], activities_df['time']/60)
 
 
 ax4 = fig.add_subplot(2,5,4)
-ax4.scatter(activities_df['avgSpeed'], activities_df['time']/60)
+ax4.scatter(activities_df['intDistance'], activities_df['intTime']/60)
 #ax4.scatter(activities_df['avgSpeed'], activities_df['avgSpeed']**2)
 
 
 #scaled_data = scale.fit_transform(activities_df[['turns']]) 
 ax5 = fig.add_subplot(2,5,5)
-ax5.scatter(activities_df['turns']**(1/2), activities_df['time']/60)
+ax5.scatter(activities_df['turns'], activities_df['time']/60)
 #ax5.scatter(activities_df['turns'], activities_df['avgSpeed']**2)
 
 maxDownHill = max(activities_df.loc[:, 'downHillTurns'])

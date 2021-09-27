@@ -9,13 +9,17 @@ from sklearn.cluster import KMeans
 import numpy as np
 from sklearn import metrics
 import math
+from sklearn.model_selection import cross_val_score
+from sklearn.pipeline import make_pipeline
+import joblib
 
 
-activities_df = pd.read_csv("/Users/chris_egersdoerfer/Desktop/proData-csv/test_all_male")
+activities_df = pd.read_csv("/Users/chris_egersdoerfer/Desktop/proData-csv/test_all_male_intervals")
 
 """
-X = activities_df[['e_gain', 'e_loss', 'distance', 'turns']]
-y = activities_df['time'].tolist()
+#X = activities_df[['e_gain', 'e_loss', 'distance', 'turns']]
+X = activities_df[['e_gain', 'e_loss', 'distance', 'turns', 'intDistance', 'intE_gain', 'intE_loss']]
+y = activities_df['intTime'].tolist()
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 print(X_train)
 print(X_test)
@@ -38,45 +42,80 @@ for i in range(len(result)):
 meanError = totalError / len(result)
 print("mean error: " + str(meanError))
 fig = plt.figure()
-ax = fig.add_subplot(1,1,1)
+ax = fig.add_subplot(2,2,1)
 ax.plot(range(len(result)), y_test, color = 'r')
 ax.plot(range(len(result)), result, color = 'b')
+ax2 = fig.add_subplot(2,2,2)
+ax2.plot(range(len(result)), X_test, color = 'b')
+ax3 = fig.add_subplot(2,2,3)
+ax3.scatter(X_test.iloc[:, 4], y_test, color = 'g')
+ax3.scatter(X_test.iloc[:, 4], result, color = 'r')
+#ax3.scatter(np.transpose(scaled_x_train)[2], scaled_y_train, color = 'g')
+ax3 = fig.add_subplot(2,2,4)
+ax3.scatter(X_test.iloc[:, 5], y_test, color = 'g')
+ax3.scatter(X_test.iloc[:, 5], result, color = 'r')
+#ax3.scatter(np.transpose(scaled_x_train)[3], scaled_y_train, color = 'g')
 plt.show()
 
 
 print('Mean Squared Error:', math.sqrt(metrics.mean_squared_error(y_test, result)))
-"""
 
 
 """
 
-scale_train= StandardScaler()
-scale_test= StandardScaler()
 
-X = activities_df[['e_gain', 'distance', 'turns']]
-y = activities_df[['time']]
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state = 1)
+scale_x= StandardScaler()
+scale_y= StandardScaler()
 
-scaled_x_train = np.array(scale_train.fit_transform(X_train))
-scaled_x_test = np.array(scale_test.fit_transform(X_test))
-scaled_y_train = np.array(scale_train.fit_transform(y_train))
-scaled_y_test = np.array(scale_test.fit_transform(y_test))
+X = activities_df[['e_gain', 'e_loss', 'distance', 'turns', 'intDistance', 'intE_gain', 'intE_loss']]
+#X = activities_df[['intDistance', 'intE_gain', 'intE_loss']]
+
+y = activities_df[['intTime']]
 
 
-#print(scaled_x_train)
-#print(scaled_x_test)
-#print(scaled_y_train)
-#print(scaled_y_test)
-#print(scale_test.inverse_transform(scaled_y_test))
 
-regr = SVR(kernel = 'poly', C = .5)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, random_state = 3)
+
+
+scaled_x_train = np.array(scale_x.fit_transform(X_train))
+scaled_x_test = np.array(scale_x.transform(X_test))
+scaled_y_train = np.array(scale_y.fit_transform(y_train)).flatten()
+scaled_y_test = np.array(scale_y.transform(y_test)).flatten()
+
+
+regr = SVR(kernel = 'poly', degree=1, C = .4, epsilon = .5)
+print(cross_val_score(regr, scaled_x_train, scaled_y_train, cv=10, scoring = "r2").mean())
+regr = SVR(kernel = 'linear', degree=1, C = .4, epsilon = .5)
+print(cross_val_score(regr, scaled_x_train, scaled_y_train, cv=10, scoring = "r2").mean())
+regr = SVR(kernel = 'rbf', degree=1, C = .4, epsilon = .5)
+print(cross_val_score(regr, scaled_x_train, scaled_y_train, cv=10, scoring = "r2").mean())
+
+
+scaled_y_train = scaled_y_train.reshape([len(scaled_y_train), 1])
+scaled_y_test = scaled_y_test.reshape([len(scaled_y_test), 1])
+
+
+regr = SVR(kernel = 'rbf', degree = 1, C = .4, epsilon = .5)
+
+
 
 regr.fit(scaled_x_train, np.transpose(scaled_y_train)[0])
 result = regr.predict(scaled_x_test)
 
+joblib.dump(regr, "/Users/chris_egersdoerfer/Desktop/SVR_Model/SVR.joblib")
 
-result = scale_test.inverse_transform(result)
-scaled_y_test = scale_test.inverse_transform(scaled_y_test)
+#importance = regr.coef_
+# summarize feature importance
+#for i,v in enumerate(importance):
+	#print('Feature: ' + str(i) + 'Score: ' + str(v))
+
+
+scaled_y_train = scale_y.inverse_transform(scaled_y_train)
+scaled_x_train = scale_x.inverse_transform(scaled_x_train)
+
+result = scale_y.inverse_transform(result)
+scaled_y_test = scale_y.inverse_transform(scaled_y_test)
+scaled_x_test = scale_x.inverse_transform(scaled_x_test)
 meanPrediction = sum(result)/len(result)
 meanTest = sum(scaled_y_test)/len(scaled_y_test)
 print("predicted mean: " + str(meanPrediction))
@@ -97,7 +136,6 @@ for i in range(len(result)):
 	currentPercentError = result[i] / scaled_y_test[i]
 	if currentPercentError < 1:
 		currentPercentError = 2 - currentPercentError
-	print(currentPercentError)
 	totalError += currentError
 	totalPercentError += currentPercentError
 
@@ -108,22 +146,31 @@ print("variance real: " + str(varianceReal1))
 print("mean error: " + str(meanError))
 print("mean percent error: " + str(meanPercentError[0].round(2)) + "%")
 fig = plt.figure()
-ax = fig.add_subplot(1,1,1)
+ax = fig.add_subplot(2,2,1)
 ax.plot(range(len(result)), scaled_y_test, color = 'r')
 ax.plot(range(len(result)), result, color = 'b')
+ax2 = fig.add_subplot(2,2,2)
+ax2.plot(range(len(result)), np.transpose(scaled_x_test)[0], color = 'b')
+ax3 = fig.add_subplot(2,2,3)
+ax3.scatter(np.transpose(scaled_x_test)[0], scaled_y_test, color = 'g')
+ax3.scatter(np.transpose(scaled_x_test)[0], result, color = 'r')
+#ax3.scatter(np.transpose(scaled_x_train)[2], scaled_y_train, color = 'g')
+ax3 = fig.add_subplot(2,2,4)
+ax3.scatter(np.transpose(scaled_x_test)[1], scaled_y_test, color = 'g')
+ax3.scatter(np.transpose(scaled_x_test)[1], result, color = 'r')
+#ax3.scatter(np.transpose(scaled_x_train)[3], scaled_y_train, color = 'g')
 plt.show()
 
 print('Mean Squared Error:', math.sqrt(metrics.mean_squared_error(scaled_y_test, result)))
 
 
+
+
+
+
 """
 
-
-
-
-
-
-X = activities_df[['e_gain', 'distance', 'turns', 'downHillTurns']]
+X = activities_df[['e_gain', 'distance', 'turns']]
 y = activities_df[['time']]
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state = 3)
 
@@ -161,22 +208,18 @@ y_test_cluster2.columns = ['time']
 X_test_cluster2 = X_test_cluster2.drop(columns=['y', 'cluster'], axis = 1)
 
 
-scale_X_train1= StandardScaler()
-scale_X_train2= StandardScaler()
-scale_X_test1= StandardScaler()
-scale_X_test2= StandardScaler()
-scale_y_train1= StandardScaler()
-scale_y_train2= StandardScaler()
-scale_y_test1= StandardScaler()
-scale_y_test2= StandardScaler()
-scaled_x_train_cluster1 = np.array(scale_X_train1.fit_transform(X_train_cluster1))
-scaled_x_train_cluster2 = np.array(scale_X_train2.fit_transform(X_train_cluster2))
-scaled_x_test_cluster1 = np.array(scale_X_test1.fit_transform(X_test_cluster1))
-scaled_x_test_cluster2 = np.array(scale_X_test2.fit_transform(X_test_cluster2))
-scaled_y_train_cluster1 = np.array(scale_y_train1.fit_transform(y_train_cluster1))
-scaled_y_train_cluster2 = np.array(scale_y_train2.fit_transform(y_train_cluster2))
-scaled_y_test_cluster1 = np.array(scale_y_test1.fit_transform(y_test_cluster1))
-scaled_y_test_cluster2 = np.array(scale_y_test2.fit_transform(y_test_cluster2))
+scale_X1= StandardScaler()
+scale_X2= StandardScaler()
+scale_y1= StandardScaler()
+scale_y2= StandardScaler()
+scaled_x_train_cluster1 = np.array(scale_X1.fit_transform(X_train_cluster1))
+scaled_x_train_cluster2 = np.array(scale_X2.fit_transform(X_train_cluster2))
+scaled_x_test_cluster1 = np.array(scale_X1.transform(X_test_cluster1))
+scaled_x_test_cluster2 = np.array(scale_X2.transform(X_test_cluster2))
+scaled_y_train_cluster1 = np.array(scale_y1.fit_transform(y_train_cluster1))
+scaled_y_train_cluster2 = np.array(scale_y2.fit_transform(y_train_cluster2))
+scaled_y_test_cluster1 = np.array(scale_y1.transform(y_test_cluster1))
+scaled_y_test_cluster2 = np.array(scale_y2.transform(y_test_cluster2))
 print(scaled_y_test_cluster1)
 print(scaled_y_test_cluster2)
 
@@ -189,8 +232,14 @@ print(scaled_y_test_cluster2)
 #print(scaled_y_test)
 #print(scale_test.inverse_transform(scaled_y_test))
 
-regr_cluster1 = SVR(kernel = 'poly', C = .5)
+regr_cluster1 = SVR(kernel = 'poly', degree=1, C = .4, epsilon=.5)
 regr_cluster2 = SVR(kernel = 'poly', C = .5)
+
+
+scores_cluster1 = cross_val_score(regr_cluster1, scaled_x_train_cluster1, np.transpose(scaled_y_train_cluster1)[0], cv=10, scoring='explained_variance')
+print(scores_cluster1)
+scores_cluster2 = cross_val_score(regr_cluster2, scaled_x_train_cluster2, np.transpose(scaled_y_train_cluster2)[0], cv=10, scoring='explained_variance')
+print(scores_cluster2)
 
 regr_cluster1.fit(scaled_x_train_cluster1, np.transpose(scaled_y_train_cluster1)[0])
 regr_cluster2.fit(scaled_x_train_cluster2, np.transpose(scaled_y_train_cluster2)[0])
@@ -199,10 +248,10 @@ result2 = regr_cluster2.predict(scaled_x_test_cluster2)
 print(result1)
 print(result2)
 
-result1 = scale_y_test1.inverse_transform(result1)
-result2 = scale_y_test2.inverse_transform(result2)
-scaled_y_test1 = scale_y_test1.inverse_transform(scaled_y_test_cluster1)
-scaled_y_test2 = scale_y_test2.inverse_transform(scaled_y_test_cluster2)
+result1 = scale_y1.inverse_transform(result1)
+result2 = scale_y2.inverse_transform(result2)
+scaled_y_test1 = scale_y1.inverse_transform(scaled_y_test_cluster1)
+scaled_y_test2 = scale_y2.inverse_transform(scaled_y_test_cluster2)
 
 meanPrediction_cluster1 = sum(result1)/len(result1)
 meanPrediction_cluster2 = sum(result2)/len(result2)
@@ -278,7 +327,7 @@ ax1.plot(range(len(result2)), scaled_y_test2, color = 'r')
 ax1.plot(range(len(result2)), result2, color = 'b')
 plt.show()
 
-
+"""
 
 
 
