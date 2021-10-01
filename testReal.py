@@ -54,9 +54,15 @@ for res in res_list:
 print(totalTime)
 
 print(totalTime/3600)
-dist = 110281
+dist_row = activities_df.iloc[-1]
+dist = dist_row.loc['distance']
 
 speed = dist/totalTime
 print(speed)
+
+fig = plt.figure()
+ax = fig.add_subplot(1,1,1)
+ax.plot(range(len(result)), result, color = 'r')
+plt.show()
 
 

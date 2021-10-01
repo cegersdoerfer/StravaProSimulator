@@ -95,7 +95,7 @@ def create_csv(all_activities, simulator, simulate = False, intervals = False, f
 
 		else:
 
-			activityIntervals = simulator.findIntervalsByNum(activity, intervalCount = random.randrange(8, 25))
+			activityIntervals = simulator.findIntervalsByNum(activity, intervalCount = random.randrange(2, 5))
 			activityLastRow = lastRow
 			lastRow["turns"] = len(turns[0])
 			lastRow["downHillTurns"] = len(turns[0]) - up_counter
@@ -180,7 +180,7 @@ if __name__ == '__main__':
 	pds = ProDataSimulator("/Users/chris_egersdoerfer/Desktop/Strava-ProData")
 
 	all_activities = pds.getRandomActivitiesByGender("male", 158)
-	activities_df = create_csv(all_activities, pds, intervals = True, filePath = "/Users/chris_egersdoerfer/Desktop/proData-csv/test_all_male_intervals")
+	activities_df = create_csv(all_activities, pds, intervals = True, filePath = "/Users/chris_egersdoerfer/Desktop/proData-csv/test_all_male_intervals_2-40")
 
 
 
