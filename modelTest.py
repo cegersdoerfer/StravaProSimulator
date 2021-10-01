@@ -60,20 +60,20 @@ plt.show()
 
 print('Mean Squared Error:', math.sqrt(metrics.mean_squared_error(y_test, result)))
 
-
 """
 
-scale_x= StandardScaler()
-scale_y= StandardScaler()
 
-X = activities_df[['e_gain', 'e_loss', 'distance', 'turns', 'intDistance', 'intE_gain', 'intE_loss']]
-#X = activities_df[['intDistance', 'intE_gain', 'intE_loss']]
+scale_x = StandardScaler()
+scale_y = StandardScaler()
+
+X = activities_df[['e_gain', 'e_loss', 'turns', 'distance', 'intDistance', 'intE_gain', 'intE_loss', 'intTurns']]
+#X = activities_df[['distance', 'e_gain', 'e_loss', 'turns']]
 
 y = activities_df[['intTime']]
 
 
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, random_state = 3)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state = 3)
 
 
 scaled_x_train = np.array(scale_x.fit_transform(X_train))
@@ -81,27 +81,32 @@ scaled_x_test = np.array(scale_x.transform(X_test))
 scaled_y_train = np.array(scale_y.fit_transform(y_train)).flatten()
 scaled_y_test = np.array(scale_y.transform(y_test)).flatten()
 
+scaler_x_filename = "scale_x.save"
+scaler_y_filename = "scale_y.save"
+joblib.dump(scale_x, "/Users/chris_egersdoerfer/Desktop/SVR_Model/" + scaler_x_filename) 
+joblib.dump(scale_y, "/Users/chris_egersdoerfer/Desktop/SVR_Model/" + scaler_y_filename)
 
-regr = SVR(kernel = 'poly', degree=1, C = .4, epsilon = .5)
-print(cross_val_score(regr, scaled_x_train, scaled_y_train, cv=10, scoring = "r2").mean())
-regr = SVR(kernel = 'linear', degree=1, C = .4, epsilon = .5)
-print(cross_val_score(regr, scaled_x_train, scaled_y_train, cv=10, scoring = "r2").mean())
-regr = SVR(kernel = 'rbf', degree=1, C = .4, epsilon = .5)
-print(cross_val_score(regr, scaled_x_train, scaled_y_train, cv=10, scoring = "r2").mean())
+
+regr = SVR(kernel = 'poly', degree = 1, C = 6, epsilon = .1)
+print(cross_val_score(regr, scaled_x_train, scaled_y_train, cv=10, scoring = "r2"))
+regr = SVR(kernel = 'poly', degree = 1, C = 6, epsilon = .5)
+print(cross_val_score(regr, scaled_x_train, scaled_y_train, cv=10, scoring = "r2"))
+regr = SVR(kernel = 'poly', degree = 1, C = 6, epsilon = .8)
+print(cross_val_score(regr, scaled_x_train, scaled_y_train, cv=10, scoring = "r2"))
 
 
 scaled_y_train = scaled_y_train.reshape([len(scaled_y_train), 1])
 scaled_y_test = scaled_y_test.reshape([len(scaled_y_test), 1])
 
 
-regr = SVR(kernel = 'rbf', degree = 1, C = .4, epsilon = .5)
+regr = SVR(kernel = 'poly', degree = 1, C = 6, epsilon = .1)
 
 
 
 regr.fit(scaled_x_train, np.transpose(scaled_y_train)[0])
 result = regr.predict(scaled_x_test)
 
-joblib.dump(regr, "/Users/chris_egersdoerfer/Desktop/SVR_Model/SVR.joblib")
+joblib.dump(regr, "/Users/chris_egersdoerfer/Desktop/SVR_Model/SVRTest.joblib")
 
 #importance = regr.coef_
 # summarize feature importance
@@ -151,8 +156,8 @@ ax.plot(range(len(result)), result, color = 'b')
 ax2 = fig.add_subplot(2,2,2)
 ax2.plot(range(len(result)), np.transpose(scaled_x_test)[0], color = 'b')
 ax3 = fig.add_subplot(2,2,3)
-ax3.scatter(np.transpose(scaled_x_test)[0], scaled_y_test, color = 'g')
-ax3.scatter(np.transpose(scaled_x_test)[0], result, color = 'r')
+ax3.scatter(np.transpose(scaled_x_test)[4], scaled_y_test, color = 'g')
+ax3.scatter(np.transpose(scaled_x_test)[4], result, color = 'r')
 #ax3.scatter(np.transpose(scaled_x_train)[2], scaled_y_train, color = 'g')
 ax3 = fig.add_subplot(2,2,4)
 ax3.scatter(np.transpose(scaled_x_test)[1], scaled_y_test, color = 'g')
@@ -169,8 +174,8 @@ print('Mean Squared Error:', math.sqrt(metrics.mean_squared_error(scaled_y_test,
 
 """
 
-X = activities_df[['e_gain', 'distance', 'turns']]
-y = activities_df[['time']]
+X = activities_df[['e_gain', 'e_loss', 'turns', 'distance', 'intDistance', 'intE_gain', 'intE_loss', 'intTurns']]
+y = activities_df[['intTime']]
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state = 3)
 
 
@@ -179,31 +184,31 @@ kmeans = KMeans(n_clusters=2, random_state=0)
 kmeans.fit(X_train)
 print(kmeans.cluster_centers_)
 X_train['cluster'] = kmeans.labels_
-X_train['y'] = y_train['time'].tolist()
+X_train['y'] = y_train['intTime'].tolist()
 
 cluster_predictions = kmeans.predict(X_test)
 
 X_test['cluster'] = cluster_predictions
-X_test['y'] = y_test['time'].tolist()
+X_test['y'] = y_test['intTime'].tolist()
 
 X_train_cluster1 = X_train[X_train['cluster'] == 0]
 y_train_cluster1 = pd.DataFrame(X_train_cluster1['y'].tolist())
-y_train_cluster1.columns = ['time']
+y_train_cluster1.columns = ['intTime']
 X_train_cluster1 = X_train_cluster1.drop(columns=['cluster', 'y'], axis = 1)
 
 X_train_cluster2 = X_train[X_train['cluster'] == 1]
 y_train_cluster2 = pd.DataFrame(X_train_cluster2['y'].tolist())
-y_train_cluster2.columns = ['time']
+y_train_cluster2.columns = ['intTime']
 X_train_cluster2 = X_train_cluster2.drop(columns=['cluster', 'y'], axis = 1)
 
 X_test_cluster1 = X_test[X_test['cluster'] == 0]
 y_test_cluster1 = pd.DataFrame(X_test_cluster1['y'].tolist())
-y_test_cluster1.columns = ['time']
+y_test_cluster1.columns = ['intTime']
 X_test_cluster1 = X_test_cluster1.drop(columns=['y', 'cluster'], axis = 1)
 
 X_test_cluster2 = X_test[X_test['cluster'] == 1]
 y_test_cluster2 = pd.DataFrame(X_test_cluster2['y'].tolist())
-y_test_cluster2.columns = ['time']
+y_test_cluster2.columns = ['intTime']
 X_test_cluster2 = X_test_cluster2.drop(columns=['y', 'cluster'], axis = 1)
 
 
@@ -234,6 +239,7 @@ print(scaled_y_test_cluster2)
 regr_cluster1 = SVR(kernel = 'poly', degree=1, C = .4, epsilon=.5)
 regr_cluster2 = SVR(kernel = 'poly', C = .5)
 
+joblib.dump(regr, "/Users/chris_egersdoerfer/Desktop/SVR_Model/SVRTest.joblib")
 
 scores_cluster1 = cross_val_score(regr_cluster1, scaled_x_train_cluster1, np.transpose(scaled_y_train_cluster1)[0], cv=10, scoring='explained_variance')
 print(scores_cluster1)

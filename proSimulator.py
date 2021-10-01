@@ -10,8 +10,15 @@ import haversine
 from datetime import datetime
 
 class ProDataSimulator():
-	def __init__(self, Path = None):
-		self.Path = Path if not Path is None else "/Users/chris_egersdoerfer/Desktop/Strava-ProData"
+	def __init__(self, path = "/Users/chris_egersdoerfer/Desktop/Strava-ProData", simulate = False):
+		self.Path = path
+		self.simulate = simulate
+
+	def getPath(self):
+		return self.path
+
+	def setPath(self, path):
+		self.path = path
 
 	def getAllActivities(self):
 		"""
@@ -22,14 +29,25 @@ class ProDataSimulator():
 				key is the name of an athlete and each value is the repective list of activities
 		"""
 		activities = {}
-		athletes = os.listdir(self.Path)
-		athletes.remove(".DS_Store")
-		for athlete in athletes:
-			try:
-				activities[athlete] = self.getSingleAthleteActivities(athlete)
-			except:
-				print(traceback.format_exc())
-				pass
+		if self.simulate is False:
+			athletes = os.listdir(self.Path)
+			athletes.remove(".DS_Store")
+			if self.simulate is False:
+				for athlete in athletes:
+					try:
+						activities[athlete] = self.getSingleAthleteActivities(athlete)
+					except:
+						print(traceback.format_exc())
+						pass
+		else:
+			tracks = os.listdir(self.Path)
+			tracks.remove(".DS_Store")
+			for track in tracks:
+				try:
+					activities = self.getSingleAthleteActivities()
+				except:
+					print(traceback.format_exc())
+					pass
 
 		return activities
 
@@ -65,7 +83,7 @@ class ProDataSimulator():
 
 
 
-	def getSingleAthleteActivities(self, athlete):
+	def getSingleAthleteActivities(self, athlete = None):
 		"""
 			This method parses all gpx files of a single athlete to individual pandas dataframes
 
@@ -75,13 +93,17 @@ class ProDataSimulator():
 			Return: 
 				dataframes: (list) collection of dataframes containing one for each activity of the given athlete
 		"""
-		athletePath = self.Path + '/' + athlete
-		gpxFiles = os.listdir(athletePath)
+		if athlete != None:
+			dirPath = self.Path + '/' + athlete
+		else:
+			dirPath = self.Path
+		gpxFiles = os.listdir(dirPath)
 		try:
 			gpxFiles.remove(".DS_Store")
 		except:
 			pass
-		parsed_gpx = self.parseGpx(athletePath, gpxFiles)
+		print(gpxFiles)
+		parsed_gpx = self.parseGpx(dirPath, gpxFiles)
 		dataframes = self.writeDataframes(parsed_gpx)
 
 		return dataframes
@@ -202,16 +224,26 @@ class ProDataSimulator():
 					print(traceback.format_exc())
 					pass
 				print("FILE " + dir+"/"+file)
-				trackpoints = gpx.getElementsByTagName('trkpt')
-				elevation = gpx.getElementsByTagName('ele')
-				time = gpx.getElementsByTagName('time')
-				for point in range(len(trackpoints)):
-						dic = {"Time" : datetime.strptime(time[point].firstChild.nodeValue, '%Y-%m-%dT%H:%M:%S.%fZ'),
-								"Latitude" : float(trackpoints[point].attributes["lat"].value),
-								"Longitude" : float(trackpoints[point].attributes["lon"].value),
-								"Elevation" : float(elevation[point].firstChild.nodeValue)
-								}
-						dataPoints.append(dic)
+				if self.simulate is False:
+					trackpoints = gpx.getElementsByTagName('trkpt')
+					elevation = gpx.getElementsByTagName('ele')
+					time = gpx.getElementsByTagName('time')
+					for point in range(len(trackpoints)):
+							dic = {"Time" : datetime.strptime(time[point].firstChild.nodeValue, '%Y-%m-%dT%H:%M:%S.%fZ'),
+									"Latitude" : float(trackpoints[point].attributes["lat"].value),
+									"Longitude" : float(trackpoints[point].attributes["lon"].value),
+									"Elevation" : float(elevation[point].firstChild.nodeValue)
+									}
+							dataPoints.append(dic)
+				else:
+					trackpoints = gpx.getElementsByTagName('trkpt')
+					elevation = gpx.getElementsByTagName('ele')
+					for point in range(len(trackpoints)):
+							dic = {"Latitude" : float(trackpoints[point].attributes["lat"].value),
+									"Longitude" : float(trackpoints[point].attributes["lon"].value),
+									"Elevation" : float(elevation[point].firstChild.nodeValue)
+									}
+							dataPoints.append(dic)
 			parsed_files[file] = dataPoints
 
 		return parsed_files
@@ -308,8 +340,8 @@ class ProDataSimulator():
 				dist.append(dist[-1] + calculated_distance)
 
 		if Distance:
-			if columnLabels != None:
-				dataframe[columnLabels[0]] = dist
+			if columnLabels != None and 'dist' in columnLabels:
+				dataframe[columnLabels['dist']] = dist
 			elif formula == "haversine":
 				if includeElevation:
 					dataframe["3dHavDistance"] = dist
@@ -321,32 +353,32 @@ class ProDataSimulator():
 				else:
 					dataframe["2dVinDistance"] = dist
 		if ElevationGain:
-			if columnLabels != None:
-				dataframe[columnLabels[1]] = e_gain
+			if columnLabels != None and 'e_gain' in columnLabels:
+				dataframe[columnLabels['e_gain']] = e_gain
 			else:
 				dataframe["ElevationGain"] = e_gain
 
 		if ElevationLoss:
-			if columnLabels != None:
-				dataframe[columnLabels[2]] = e_loss
+			if columnLabels != None and 'e_loss' in columnLabels:
+				dataframe[columnLabels['e_loss']] = e_loss
 			else:
 				dataframe["ElevationLoss"] = e_loss
 
 		if Time:
-			if columnLabels != None:
-				dataframe[columnLabels[3]] = time_measure
+			if columnLabels != None and 'time' in columnLabels:
+				dataframe[columnLabels['time']] = time_measure
 			else:
 				dataframe["Time"] = time_measure
 
 		if Speed:
-			if columnLabels != None:
-				dataframe[columnLabels[4]] = speed_measure
+			if columnLabels != None and 'speed' in columnLabels:
+				dataframe[columnLabels['speed']] = speed_measure
 			else:
 				dataframe["Speed"] = speed_measure
 
 		if Slope:
-			if columnLabels != None:
-				dataframe[columnLabels[5]] = slope_measure
+			if columnLabels != None and 'slope' in columnLabels:
+				dataframe[columnLabels['slope']] = slope_measure
 			else:
 				dataframe['Slope'] = slope_measure
 

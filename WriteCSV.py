@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 from proSimulator import ProDataSimulator
+import random
 
 
 #all_activities = {}
@@ -12,20 +13,43 @@ from proSimulator import ProDataSimulator
 
 #all_male_activities = pds.getAllGenderedActivities("male")
 #all_female_activities = pds.getAllGenderedActivities("female")
-def create_csv(all_activities, simulator, intervals = False, filePath = "/Users/chris_egersdoerfer/Desktop/proData-csv/test"):
-	if intervals is False:
+def create_csv(all_activities, simulator, simulate = False, intervals = False, filePath = "/Users/chris_egersdoerfer/Desktop/proData-csv/test"):
+	if simulate is False:
+		if intervals is False:
 
-		measure_df = pd.DataFrame(columns = ["time", "e_gain", "e_loss", "distance", "avgSpeed", 
-											 "turns", "avgTurnDegree", "avgTurnLength"])
+			measure_df = pd.DataFrame(columns = ["time", "e_gain", "e_loss", "distance", "avgSpeed", 
+												 "turns"])
+		else:
+
+			measure_df = pd.DataFrame(columns = ["time", "e_gain", "e_loss", "distance", "avgSpeed", 
+												 "turns", "intTime", 
+												 "intE_gain", "intE_loss","intDistance", "intAvgSpeed", 
+												 "intTurns"])
 	else:
+		if intervals is False:
 
-		measure_df = pd.DataFrame(columns = ["time", "e_gain", "e_loss", "distance", "avgSpeed", 
-											 "turns", "avgTurnDegree", "avgTurnLength", "intTime", 
-											 "intE_gain", "intE_loss","intDistance", "intAvgSpeed", 
-											 "intTurns", "intAvgTurnDegree", "intAvgTurnLength"])
+			measure_df = pd.DataFrame(columns = ["e_gain", "e_loss", "distance", 
+												 "turns"])
+		else:
+
+			measure_df = pd.DataFrame(columns = ["e_gain", "e_loss", "distance", 
+												 "turns", 
+												 "intE_gain", "intE_loss","intDistance", 
+												 "intTurns"])
 	progress = 0
 	for name, activity in all_activities.items():
-		activity = simulator.findAllMeasures(activity, columnLabels = ["distance", "e_gain", "e_loss", "time", "speed", "slope"])
+		if simulate is False:
+			activity = simulator.findAllMeasures(activity, columnLabels = {'dist': "distance", 
+																		   'e_gain': "e_gain", 
+																		   'e_loss': "e_loss", 
+																		   'time': "time", 
+																		   'speed': "speed", 
+																		   'slope': "slope"})
+		else:
+			activity = simulator.findAllMeasures(activity, Time = False, Speed = False, columnLabels = {'dist': "distance", 
+																										'e_gain': "e_gain", 
+																										'e_loss': "e_loss", 
+																										'slope': "slope"})
 		points = []
 		for r in range(len(activity)):
 				row = activity.iloc[r]
@@ -33,15 +57,8 @@ def create_csv(all_activities, simulator, intervals = False, filePath = "/Users/
 		turns = simulator.findTurns(points)
 		print(len(turns[1]))
 
-		s = 0
-		degree = 0
-		for turn in turns[0]:
-				s += len(turn)
-				degree += abs(turn[-1])
-
-		avgDegree = degree/len(turns[0])
-		avgLength = s/len(turns[0])
-		avgSpeed = sum(activity["speed"])/len(activity)
+		if simulate is False:
+			avgSpeed = sum(activity["speed"])/len(activity)
 
 		preceding_slopes = simulator.findPrecedingSlope(turns[1], activity)
 		shift = abs(min(preceding_slopes))
@@ -61,51 +78,54 @@ def create_csv(all_activities, simulator, intervals = False, filePath = "/Users/
 
 
 
+		lastRow = activity.iloc[-1]
 
 		if intervals is False:
-			lastRow = activity.iloc[-1]
 			print(name, " : ", lastRow)
 			print("iteration: " + str(progress))
-			lastRow = lastRow[["time", "e_gain", "e_loss", "distance"]]
-			lastRow["avgSpeed"] = avgSpeed
+			if simulate is False:
+				lastRow = lastRow[["time", "e_gain", "e_loss", "distance", 'turns']]
+				lastRow["avgSpeed"] = avgSpeed
+			else:
+				lastRow = lastRow[["e_gain", "e_loss", "distance", 'turns']]
 			lastRow["downHillTurns"] = len(turns[0]) - up_counter
 			lastRow["turns"] = len(turns[0])
-			lastRow["avgTurnDegree"] = avgDegree
-			lastRow["avgTurnLength"] = avgLength
 
 			measure_df = measure_df.append(lastRow, ignore_index = True)
 
 		else:
 
-			activityIntervals = simulator.findIntervalsByNum(activity, intervalCount = 10)
-			activityLastRow = activity.iloc[-1]
-			activtyLastRow = activityLastRow[["time", "e_gain", "e_loss", "distance"]]
-			print(activtyLastRow)
+			activityIntervals = simulator.findIntervalsByNum(activity, intervalCount = random.randrange(8, 25))
+			activityLastRow = lastRow
+			lastRow["turns"] = len(turns[0])
+			lastRow["downHillTurns"] = len(turns[0]) - up_counter
+			if simulate is False:
+				activityLastRow = activityLastRow[["time", "e_gain", "e_loss", "distance", "turns", "downHillTurns"]]
+			else:
+				activityLastRow = activityLastRow[["e_gain", "e_loss", "distance", "turns", "downHillTurns"]]
+			print(activityLastRow)
 			for interval in activityIntervals:
-				interval = simulator.findAllMeasures(activityIntervals[interval], columnLabels = ["intDistance", "intE_gain", "intE_loss", "intTime", "intSpeed", "intSlope"])
+				if simulate is False:
+					interval = simulator.findAllMeasures(activityIntervals[interval], columnLabels = {'dist': "intDistance", 
+																									  'e_gain': "intE_gain", 
+																									  'e_loss': "intE_loss", 
+																									  'time': "intTime", 
+																									  'speed': "intSpeed", 
+																									  'slope': "intSlope"})
+				else:
+					interval = simulator.findAllMeasures(activityIntervals[interval], Time = False, 
+														 Speed = False, columnLabels = {'dist': "intDistance", 
+																						'e_gain': "intE_gain", 
+																						'e_loss': "intE_loss", 
+																						'slope':"intSlope"})
 				points = []
 				for r in range(len(interval)):
-					row = activity.iloc[r]
+					row = interval.iloc[r]
 					points.append([row.Longitude, row.Latitude])
 				turns = simulator.findTurns(points)
-
-
-				s = 0
-				degree = 0
-				for turn in turns[0]:
-						s += len(turn)
-						degree += abs(turn[-1])
-
-				try:
-					avgDegree = degree/len(turns[0])
-				except:
-					avgDegree = 0
-				try:
-					avgLength = s/len(turns[0])
-				except:
-					avgLength = 0
 				
-				avgSpeed = sum(interval["speed"])/len(interval)
+				if simulate is False:
+					avgSpeed = sum(interval["speed"])/len(interval)
 
 				preceding_slopes = simulator.findPrecedingSlope(turns[1], interval)
 				try:
@@ -128,16 +148,19 @@ def create_csv(all_activities, simulator, intervals = False, filePath = "/Users/
 
 				lastRow = interval.iloc[-1,:]
 				
-				lastRow = lastRow[["intTime", "intE_gain", "intE_loss", "intDistance"]]
-				lastRow.loc["time"] = activtyLastRow["time"]
-				lastRow.loc["e_gain"] = activtyLastRow["e_gain"]
-				lastRow.loc["e_loss"] = activtyLastRow["e_loss"]
-				lastRow.loc["distance"] = activtyLastRow["distance"]
-				lastRow["avgSpeed"] = avgSpeed
-				lastRow["downHillTurns"] = len(turns[0]) - up_counter
-				lastRow["turns"] = len(turns[0])
-				lastRow["avgTurnDegree"] = avgDegree
-				lastRow["avgTurnLength"] = avgLength
+				if simulate is False:
+					lastRow = lastRow[["intTime", "intE_gain", "intE_loss", "intDistance"]]
+					lastRow.loc["time"] = activityLastRow["time"]
+					lastRow["avgSpeed"] = avgSpeed
+				else:
+					lastRow = lastRow[["intE_gain", "intE_loss", "intDistance"]]
+				lastRow.loc["e_gain"] = activityLastRow["e_gain"]
+				lastRow.loc["e_loss"] = activityLastRow["e_loss"]
+				lastRow.loc["distance"] = activityLastRow["distance"]
+				lastRow.loc["turns"] = activityLastRow["turns"]
+				lastRow.loc["downHillTurns"] = activityLastRow["downHillTurns"]
+				lastRow["intDownHillTurns"] = len(turns[0]) - up_counter
+				lastRow["intTurns"] = len(turns[0])
 				print(name, " : ", lastRow)
 				print("iteration: " + str(progress))
 
@@ -153,11 +176,11 @@ def create_csv(all_activities, simulator, intervals = False, filePath = "/Users/
 	return measure_df
 
 
+if __name__ == '__main__':
+	pds = ProDataSimulator("/Users/chris_egersdoerfer/Desktop/Strava-ProData")
 
-pds = ProDataSimulator("/Users/chris_egersdoerfer/Desktop/Strava-ProData")
-
-all_activities = pds.getRandomActivitiesByGender("male", 50)
-activities_df = create_csv(all_activities, pds, intervals = True, filePath = "/Users/chris_egersdoerfer/Desktop/proData-csv/test_all_male_intervals")
+	all_activities = pds.getRandomActivitiesByGender("male", 158)
+	activities_df = create_csv(all_activities, pds, intervals = True, filePath = "/Users/chris_egersdoerfer/Desktop/proData-csv/test_all_male_intervals")
 
 
 
