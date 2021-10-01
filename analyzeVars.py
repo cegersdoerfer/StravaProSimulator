@@ -7,7 +7,7 @@ import math
 
 
 
-activities_df = pd.read_csv("/Users/chris_egersdoerfer/Desktop/proData-csv/test_all_male_intervals")
+activities_df = pd.read_csv("/Users/chris_egersdoerfer/Documents/GitHub/StravaProSimulator/proData-csv/test_all_male_intervals")
 
 scale= StandardScaler()
 

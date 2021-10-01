@@ -10,7 +10,7 @@ import haversine
 from datetime import datetime
 
 class ProDataSimulator():
-	def __init__(self, path = "/Users/chris_egersdoerfer/Desktop/Strava-ProData", simulate = False):
+	def __init__(self, path = "/Users/chris_egersdoerfer/Documents/GitHub/StravaProSimulator/Strava-ProData", simulate = False):
 		self.Path = path
 		self.simulate = simulate
 

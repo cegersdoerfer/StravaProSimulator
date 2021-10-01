@@ -13,7 +13,7 @@ import random
 
 #all_male_activities = pds.getAllGenderedActivities("male")
 #all_female_activities = pds.getAllGenderedActivities("female")
-def create_csv(all_activities, simulator, simulate = False, intervals = False, filePath = "/Users/chris_egersdoerfer/Desktop/proData-csv/test"):
+def create_csv(all_activities, simulator, simulate = False, intervals = False, filePath = "/Users/chris_egersdoerfer/Documents/GitHub/StravaProSimulator/proData-csv/test"):
 	if simulate is False:
 		if intervals is False:
 
@@ -180,7 +180,7 @@ if __name__ == '__main__':
 	pds = ProDataSimulator("/Users/chris_egersdoerfer/Desktop/Strava-ProData")
 
 	all_activities = pds.getRandomActivitiesByGender("male", 158)
-	activities_df = create_csv(all_activities, pds, intervals = True, filePath = "/Users/chris_egersdoerfer/Desktop/proData-csv/test_all_male_intervals_2-40")
+	activities_df = create_csv(all_activities, pds, intervals = True, filePath = "/Users/chris_egersdoerfer/Documents/GitHub/StravaProSimulator/proData-csv/test_all_male_intervals_2-40")
 
 
 

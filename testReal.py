@@ -23,24 +23,24 @@ pds = ProDataSimulator(path = "/Users/chris_egersdoerfer/Desktop/testRoutes", si
 
 all_activities = pds.getAllActivities()
 print(all_activities)
-activities_df = create_csv(all_activities, pds, intervals = True, simulate = True, filePath = "/Users/chris_egersdoerfer/Desktop/proData-csv/real_test.csv")
+activities_df = create_csv(all_activities, pds, intervals = True, simulate = True, filePath = "/Users/chris_egersdoerfer/Documents/GitHub/StravaProSimulator/proData-csv/real_test.csv")
 
-activities_df = pd.read_csv("/Users/chris_egersdoerfer/Desktop/proData-csv/real_test.csv")
-
-
+activities_df = pd.read_csv("/Users/chris_egersdoerfer/Documents/GitHub/StravaProSimulator/proData-csv/real_test.csv")
 
 
 
 
-scale_x = joblib.load("/Users/chris_egersdoerfer/Desktop/SVR_Model/scale_x.save")
-scale_y = joblib.load("/Users/chris_egersdoerfer/Desktop/SVR_Model/scale_y.save")
+
+
+scale_x = joblib.load("/Users/chris_egersdoerfer/Documents/GitHub/StravaProSimulator/SVR_Model/scale_x.save")
+scale_y = joblib.load("/Users/chris_egersdoerfer/Documents/GitHub/StravaProSimulator/SVR_Model/scale_y.save")
 
 X = activities_df[['e_gain', 'e_loss', 'turns', 'distance', 'intDistance', 'intE_gain', 'intE_loss', 'intTurns']]
 #X = activities_df[['e_gain', 'e_loss', 'distance', 'turns']]
 
 scaled_x = scale_x.transform(X)
 
-regr = joblib.load("/Users/chris_egersdoerfer/Desktop/SVR_Model/SVRTest.joblib")
+regr = joblib.load("/Users/chris_egersdoerfer/Documents/GitHub/StravaProSimulator/SVR_Model/SVRTest.joblib")
 
 result = regr.predict(scaled_x)
 print(result)

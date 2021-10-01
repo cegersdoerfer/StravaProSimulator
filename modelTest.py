@@ -14,7 +14,7 @@ from sklearn.pipeline import make_pipeline
 import joblib
 
 
-activities_df = pd.read_csv("/Users/chris_egersdoerfer/Desktop/proData-csv/test_all_male_intervals_8-25")
+activities_df = pd.read_csv("/Users/chris_egersdoerfer/Documents/GitHub/StravaProSimulator/proData-csv/test_all_male_intervals_8-25")
 
 
 scale_x = StandardScaler()
@@ -36,8 +36,8 @@ scaled_y_test = np.array(scale_y.transform(y_test)).flatten()
 
 scaler_x_filename = "scale_x.save"
 scaler_y_filename = "scale_y.save"
-joblib.dump(scale_x, "/Users/chris_egersdoerfer/Desktop/SVR_Model/" + scaler_x_filename) 
-joblib.dump(scale_y, "/Users/chris_egersdoerfer/Desktop/SVR_Model/" + scaler_y_filename)
+joblib.dump(scale_x, "/Users/chris_egersdoerfer/Documents/GitHub/StravaProSimulator/SVR_Model/" + scaler_x_filename) 
+joblib.dump(scale_y, "/Users/chris_egersdoerfer/Documents/GitHub/StravaProSimulator/SVR_Model/" + scaler_y_filename)
 
 
 regr = SVR(kernel = 'poly', degree = 1, C = 6, epsilon = .1)
@@ -59,7 +59,7 @@ regr = SVR(kernel = 'poly', degree = 1, C = 6, epsilon = .1)
 regr.fit(scaled_x_train, np.transpose(scaled_y_train)[0])
 result = regr.predict(scaled_x_test)
 
-joblib.dump(regr, "/Users/chris_egersdoerfer/Desktop/SVR_Model/SVRTest.joblib")
+joblib.dump(regr, "/Users/chris_egersdoerfer/Documents/GitHub/StravaProSimulator/SVR_Model/SVRTest.joblib")
 
 #importance = regr.coef_
 # summarize feature importance
