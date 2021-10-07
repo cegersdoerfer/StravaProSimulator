@@ -18,7 +18,7 @@ from WriteCSV import create_csv
 
 
 
-pds = ProDataSimulator(path = "/Users/chris_egersdoerfer/Desktop/testRoutes", simulate = True)
+pds = ProDataSimulator(path = "/Users/chris_egersdoerfer/Documents/GitHub/StravaProSimulator/testRoutes", simulate = True)
 
 
 all_activities = pds.getAllActivities()
@@ -60,9 +60,9 @@ dist = dist_row.loc['distance']
 speed = dist/totalTime
 print(speed)
 
-fig = plt.figure()
-ax = fig.add_subplot(1,1,1)
-ax.plot(range(len(result)), result, color = 'r')
-plt.show()
+#fig = plt.figure()
+#ax = fig.add_subplot(1,1,1)
+#ax.plot(range(len(result)), result, color = 'r')
+#plt.show()
 
 

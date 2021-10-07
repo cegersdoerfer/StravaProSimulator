@@ -95,7 +95,7 @@ def create_csv(all_activities, simulator, simulate = False, intervals = False, f
 
 		else:
 
-			activityIntervals = simulator.findIntervalsByNum(activity, intervalCount = random.randrange(2, 5))
+			activityIntervals = simulator.findIntervalsByNum(activity, intervalCount = random.randrange(2,5))
 			activityLastRow = lastRow
 			lastRow["turns"] = len(turns[0])
 			lastRow["downHillTurns"] = len(turns[0]) - up_counter

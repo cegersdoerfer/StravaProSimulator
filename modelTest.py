@@ -14,7 +14,7 @@ from sklearn.pipeline import make_pipeline
 import joblib
 
 
-activities_df = pd.read_csv("/Users/chris_egersdoerfer/Documents/GitHub/StravaProSimulator/proData-csv/test_all_male_intervals_8-25")
+activities_df = pd.read_csv("/Users/chris_egersdoerfer/Documents/GitHub/StravaProSimulator/proData-csv/test_all_male_intervals_2-40")
 
 
 scale_x = StandardScaler()
@@ -26,7 +26,7 @@ y = activities_df[['intTime']]
 
 
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.001, random_state = 1)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.001, random_state = 5)
 
 
 scaled_x_train = np.array(scale_x.fit_transform(X_train))
@@ -41,11 +41,11 @@ joblib.dump(scale_y, "/Users/chris_egersdoerfer/Documents/GitHub/StravaProSimula
 
 
 regr = SVR(kernel = 'poly', degree = 1, C = 6, epsilon = .1)
-print(cross_val_score(regr, scaled_x_train, scaled_y_train, cv=10, scoring = "r2").mean())
+print(cross_val_score(regr, scaled_x_train, scaled_y_train, cv=10, scoring = "explained_variance").mean())
 regr = SVR(kernel = 'rbf', degree = 1, C = 6, epsilon = .3)
-print(cross_val_score(regr, scaled_x_train, scaled_y_train, cv=10, scoring = "r2").mean())
+print(cross_val_score(regr, scaled_x_train, scaled_y_train, cv=10, scoring = "explained_variance").mean())
 regr = SVR(kernel = 'poly', degree = 1, C = 6, epsilon = .5)
-print(cross_val_score(regr, scaled_x_train, scaled_y_train, cv=10, scoring = "r2").mean())
+print(cross_val_score(regr, scaled_x_train, scaled_y_train, cv=10, scoring = "explained_variance").mean())
 
 
 scaled_y_train = scaled_y_train.reshape([len(scaled_y_train), 1])
