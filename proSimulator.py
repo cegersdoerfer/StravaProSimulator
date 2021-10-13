@@ -8,6 +8,7 @@ import math
 from geopy import distance
 import haversine
 from datetime import datetime
+import sys
 
 class ProDataSimulator():
 	def __init__(self, path = "/Users/chris_egersdoerfer/Documents/GitHub/StravaProSimulator/Strava-ProData", simulate = False):
@@ -102,7 +103,6 @@ class ProDataSimulator():
 			gpxFiles.remove(".DS_Store")
 		except:
 			pass
-		print(gpxFiles)
 		parsed_gpx = self.parseGpx(dirPath, gpxFiles)
 		dataframes = self.writeDataframes(parsed_gpx)
 
@@ -156,10 +156,13 @@ class ProDataSimulator():
 
 		#search for files using OS Module
 		parsed_dict = {}
+		curCount = 0
+		totalCount = len(selectedActivities)
 		for file in selectedActivities:
 			parsed_gpx = self.parseGpx(self.Path + "/" + selectedActivities[file], [file])
 			parsed_dict[file] = parsed_gpx[file]
-
+			curCount += 1
+			self.progress(curCount, totalCount, 'reading gpx files')
 		dataframes = self.writeDataframes(parsed_dict)
 
 		return dataframes
@@ -223,7 +226,7 @@ class ProDataSimulator():
 				except:
 					print(traceback.format_exc())
 					pass
-				print("FILE " + dir+"/"+file)
+				#print("FILE " + dir+"/"+file)
 				if self.simulate is False:
 					trackpoints = gpx.getElementsByTagName('trkpt')
 					elevation = gpx.getElementsByTagName('ele')
@@ -245,6 +248,7 @@ class ProDataSimulator():
 									}
 							dataPoints.append(dic)
 			parsed_files[file] = dataPoints
+
 
 		return parsed_files
 
@@ -278,6 +282,7 @@ class ProDataSimulator():
 		speed_measure = [0]
 		slope_measure = [0]
 
+		
 		for i in range(len(dataframe)):
 			if i == 0:
 				pass
@@ -335,53 +340,53 @@ class ProDataSimulator():
 						delta = 0
 					slope_measure.append(delta)
 
-
-
 				dist.append(dist[-1] + calculated_distance)
 
 		if Distance:
 			if columnLabels != None and 'dist' in columnLabels:
-				dataframe[columnLabels['dist']] = dist
+				dataframe.loc[:, columnLabels['dist']] = dist
 			elif formula == "haversine":
 				if includeElevation:
-					dataframe["3dHavDistance"] = dist
+					dataframe.loc[:, "3dHavDistance"] = dist
 				else:
-					dataframe["2dHavDistance"] = dist
+					dataframe.loc[:, "2dHavDistance"] = dist
 			else:
 				if includeElevation:
-					dataframe["3dVinDistance"] = dist
+					dataframe.loc[:, "3dVinDistance"] = dist
 				else:
-					dataframe["2dVinDistance"] = dist
+					dataframe.loc[:, "2dVinDistance"] = dist
+
 		if ElevationGain:
 			if columnLabels != None and 'e_gain' in columnLabels:
-				dataframe[columnLabels['e_gain']] = e_gain
+				dataframe.loc[:, columnLabels['e_gain']] = e_gain
 			else:
-				dataframe["ElevationGain"] = e_gain
+				dataframe.loc[:, "ElevationGain"] = e_gain
 
 		if ElevationLoss:
 			if columnLabels != None and 'e_loss' in columnLabels:
-				dataframe[columnLabels['e_loss']] = e_loss
+				dataframe.loc[:, columnLabels['e_loss']] = e_loss
 			else:
-				dataframe["ElevationLoss"] = e_loss
+				dataframe.loc[:, "ElevationLoss"] = e_loss
 
 		if Time:
 			if columnLabels != None and 'time' in columnLabels:
-				dataframe[columnLabels['time']] = time_measure
+				dataframe.loc[:, columnLabels['time']] = time_measure
 			else:
-				dataframe["Time"] = time_measure
+				dataframe.loc[:, "Time"] = time_measure
 
 		if Speed:
 			if columnLabels != None and 'speed' in columnLabels:
-				dataframe[columnLabels['speed']] = speed_measure
+				dataframe.loc[:, columnLabels['speed']] = speed_measure
 			else:
-				dataframe["Speed"] = speed_measure
+				dataframe.loc[:, "Speed"] = speed_measure
 
 		if Slope:
 			if columnLabels != None and 'slope' in columnLabels:
-				dataframe[columnLabels['slope']] = slope_measure
+				dataframe.loc[:, columnLabels['slope']] = slope_measure
 			else:
-				dataframe['Slope'] = slope_measure
+				dataframe.loc[:, 'Slope'] = slope_measure
 
+		
 		return dataframe
 
 
@@ -416,14 +421,14 @@ class ProDataSimulator():
 			dataframe[columnLabel] = dist
 		elif formula == "haversine":
 			if includeElevation:
-				dataframe["3dHavDistance"] = dist
+				dataframe.loc[:, "3dHavDistance"] = dist
 			else:
-				dataframe["2dHavDistance"] = dist
+				dataframe.loc[:, "2dHavDistance"] = dist
 		else:
 			if includeElevation:
-				dataframe["3dVinDistance"] = dist
+				dataframe.loc[:, "3dVinDistance"] = dist
 			else:
-				dataframe["2dVinDistance"] = dist
+				dataframe.loc[:, "2dVinDistance"] = dist
 
 		return dist[-1]
 
@@ -446,13 +451,11 @@ class ProDataSimulator():
 				else:
 					elev.append(elev[-1])
 		if columnLabel != None:
-			dataframe[columnLabel] = elev
+			dataframe.loc[:, columnLabel] = elev
 		else:
-			dataframe["elevationGain"] = elev
+			dataframe.loc[:, "elevationGain"] = elev
 
 		return elev[-1]
-
-
 
 
 	def findTotalElevationLoss(self, dataframe, columnLabel = None):
@@ -472,29 +475,21 @@ class ProDataSimulator():
 				else:
 					elev.append(elev[-1])
 		if columnLabel != None:
-			dataframe[columnLabel] = elev
+			dataframe.loc[:, columnLabel] = elev
 		else:
-			dataframe["elevationLoss"] = elev
+			dataframe.loc[:, "elevationLoss"] = elev
 
 		return elev[-1]
 
-	def findAverageSlope(self):
-		pass
-
-	def findSteepSections(self, sectionCount):
-		"""
-		returns a list of ones or zeroes to indicate where in the track 
-		"""
-		pass
 
 	def findAvgSpeed(self, dataframe, distance = None, time = None):
 		if distance == None:
 			distance = self.findTotalDistance(dataframe)
-
 		if time == None:
 			time = self.findTotalTime(dataframe)
 
 		return round(distance / time, 3)
+
 
 	def findTotalTime(self, dataframe):
 		"""
@@ -504,7 +499,6 @@ class ProDataSimulator():
 		"""
 		startTime = dataframe.iloc[1].Time
 		endTime = dataframe.iloc[-1].Time
-
 		totalTime = round((endTime - startTime).total_seconds()/60, 2)
 
 		return totalTime
@@ -634,18 +628,6 @@ class ProDataSimulator():
 		course = angle * convertFactor
 		return course
 
-	def findEstimatedExertion(self):
-		pass
-
-	def findFastestInterval(self):
-		pass
-
-	def findIntervalAvgSpeed(self):
-		pass
-
-	def findIntervalElevationGain(self):
-		pass
-
 	def findIntervalsByNum(self, track, intervalCount = 3):
 		"""
 
@@ -654,33 +636,19 @@ class ProDataSimulator():
 		intervals = {}
 		for i in range(intervalCount):
 			if i < (intervalCount-1):
-				intervals["interval " + str(i)] = track.iloc[interval_length * i : interval_length * (i+1), :]
+				intervals["interval " + str(i)] = track.iloc[interval_length * i : interval_length * (i+1), :].copy()
 			else:
-				print("last interval")
-				intervals["interval " + str(i)] = track.iloc[interval_length * i:, :]
+				intervals["interval " + str(i)] = track.iloc[interval_length * i:, :].copy()
 		return intervals
 
+	def progress(self, count, total, status=''):
+		bar_len = 60
+		filled_len = int(round(bar_len * count / float(total)))
+		percents = round(100.0 * count / float(total), 1)
+		bar = '=' * filled_len + '-' * (bar_len - filled_len)
+		sys.stdout.write('[%s] %s%s ...%s\r' % (bar, percents, '%', status))
+		sys.stdout.flush()
 
-#gpx = gpxpy.parse("/Users/chris_egersdoerfer/Desktop/Strava-ProData/Alex Dowsett - male/strava.activities.2963997118.Morning-Ride.gpx")
-#print(gpx)
-
-
-#os.chdir("/Users/chris_egersdoerfer/Downloads")
-#dom1 = parse("strava.activities.5642665960.Afternoon-Ride.gpx")
-#track = dom1.getElementsByTagName('time')
-#print(track[1].firstChild.nodeValue)
-#n_track = len(track)
-#print(n_track)
-
-#os.chdir("/Users/chris_egersdoerfer/Desktop/Strava-ProData/Alex Dowsett - male")
-
-#basicname, file_extension = os.path.splitext("strava.activities.2963997118.Morning-Ride.gpx")
-
-    #print(basicname,file_extension)
-#s = open("Afternoon_Ride.gpx", mode='r', encoding='utf-8-sig').read()
-#open(f"{basicname}_NOBOM{file_extension}", mode='w', encoding='utf-8').write(s)
-
-#gpxpy.parse("Afternoon_Ride_NOBOM.gpx")
 
 if __name__ == '__main__':
 

@@ -14,7 +14,7 @@ from sklearn.pipeline import make_pipeline
 import joblib
 
 
-activities_df = pd.read_csv("/Users/chris_egersdoerfer/Documents/GitHub/StravaProSimulator/proData-csv/test_all_male_intervals_2-40")
+activities_df = pd.read_csv("/Users/chris_egersdoerfer/Documents/GitHub/StravaProSimulator/proData-csv/test_all_male_intervals_5-mile")
 
 
 scale_x = StandardScaler()
@@ -28,14 +28,17 @@ y = activities_df[['intTime']]
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.001, random_state = 5)
 
+print("MAX: ", max(activities_df['distance']))
+print("MIN: ", min(activities_df['distance']))
+
 
 scaled_x_train = np.array(scale_x.fit_transform(X_train))
 scaled_x_test = np.array(scale_x.transform(X_test))
 scaled_y_train = np.array(scale_y.fit_transform(y_train)).flatten()
 scaled_y_test = np.array(scale_y.transform(y_test)).flatten()
 
-scaler_x_filename = "scale_x.save"
-scaler_y_filename = "scale_y.save"
+scaler_x_filename = "scale_x5-mile.save"
+scaler_y_filename = "scale_y5-mile.save"
 joblib.dump(scale_x, "/Users/chris_egersdoerfer/Documents/GitHub/StravaProSimulator/SVR_Model/" + scaler_x_filename) 
 joblib.dump(scale_y, "/Users/chris_egersdoerfer/Documents/GitHub/StravaProSimulator/SVR_Model/" + scaler_y_filename)
 
@@ -44,7 +47,7 @@ regr = SVR(kernel = 'poly', degree = 1, C = 6, epsilon = .1)
 print(cross_val_score(regr, scaled_x_train, scaled_y_train, cv=10, scoring = "explained_variance").mean())
 regr = SVR(kernel = 'rbf', degree = 1, C = 6, epsilon = .3)
 print(cross_val_score(regr, scaled_x_train, scaled_y_train, cv=10, scoring = "explained_variance").mean())
-regr = SVR(kernel = 'poly', degree = 1, C = 6, epsilon = .5)
+regr = SVR(kernel = 'poly', degree = 1, C = 6, epsilon = 5)
 print(cross_val_score(regr, scaled_x_train, scaled_y_train, cv=10, scoring = "explained_variance").mean())
 
 
@@ -59,7 +62,7 @@ regr = SVR(kernel = 'poly', degree = 1, C = 6, epsilon = .1)
 regr.fit(scaled_x_train, np.transpose(scaled_y_train)[0])
 result = regr.predict(scaled_x_test)
 
-joblib.dump(regr, "/Users/chris_egersdoerfer/Documents/GitHub/StravaProSimulator/SVR_Model/SVRTest.joblib")
+joblib.dump(regr, "/Users/chris_egersdoerfer/Documents/GitHub/StravaProSimulator/SVR_Model/SVRTest5-mile.joblib")
 
 #importance = regr.coef_
 # summarize feature importance
