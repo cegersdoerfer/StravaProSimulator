@@ -57,7 +57,10 @@ def create_csv(all_activities, simulator, random_range = [2, 40], csv = True, fi
 			normalized_slopes.append(normalized)
 		"""
 		lastRow = activity.iloc[-1, :]
-		activityIntervals = simulator.findIntervalsByNum(activity, intervalCount = random.randint(random_range[0],random_range[1]))
+		if csv:
+			activityIntervals = simulator.findIntervalsByNum(activity, intervalCount = random.randint(random_range[0],random_range[1]))
+		else:
+			activityIntervals = simulator.findIntervalsByNum(activity, intervalCount = 5)
 		activityLastRow = lastRow.copy()
 		activityLastRow.loc["turns"] = len(turns[0])
 		#activityLastRow.loc["downHillTurns"] = len(turns[0]) - up_counter
@@ -70,10 +73,6 @@ def create_csv(all_activities, simulator, random_range = [2, 40], csv = True, fi
 																							  'time': "intTime", 
 																							  'speed': "intSpeed", 
 																							  'slope': "intSlope"})
-			if csv is False:
-				interval_dict[name][interval_name] = interval.to_json()
-			else:
-				interval_dict[name][interval_name] = interval
 			points = []
 			for r in range(len(interval)):
 				row = interval.iloc[r]
@@ -97,26 +96,29 @@ def create_csv(all_activities, simulator, random_range = [2, 40], csv = True, fi
 
 			simulator.progress(prog, total_length, 'calculating features from gpx')
 			measure_df = measure_df.append(lastRow, ignore_index = True)
+			if csv is False:
+				interval_dict[name][interval_name] = lastRow.to_json()
+			else:
+				interval_dict[name][interval_name] = interval
 
 		prog += 1
 
-	if csv == True:
-		measure_df.to_csv(filePath, index = False)
-		return interval_dict 
-	else:
-		return measure_df
+	measure_df.to_csv(filePath, index = False)
+	return interval_dict 
+		
 
 
 if __name__ == '__main__':
 	pds = ProDataSimulator("/Users/chris_egersdoerfer/Documents/GitHub/StravaProSimulator/Strava-ProData")
 
-	all_activities = pds.getRandomActivitiesByGender("male", 1)
+	all_activities = pds.getRandomActivitiesByGender("male", 158)
 	print("\n")
 	print("GPX PARSING COMPLETE...")
 	print("--------------------------------------" + "\n")
 	print("Analyzing gpx files for features...this may take a while")
-	filepath = "/Users/chris_egersdoerfer/Documents/GitHub/StravaProSimulator/proData-csv/test_all_male_intervals_2-40Test"
+	filepath = "/Users/chris_egersdoerfer/Documents/GitHub/StravaProSimulator/proData-csv/test_all_male_intervals_2-40Test1"
 	activities_df = create_csv(all_activities, pds, filePath = filepath)
+	#print(activities_df)
 	print("\n")
 	print("FEATURE CALCULATION COMPLETE...")
 	print("--------------------------------------" + "\n")
@@ -130,12 +132,25 @@ if __name__ == '__main__':
 		curCount += 1
 		print("analyzing: " + name + "...")
 		print("Progress: " + str(curCount) + " out of " + str(count))
-		broken_activities = create_csv(activities_df[name], pds, random_range = [2, 20], csv = False, filePath = filepath+"P2")
+		broken_activities = create_csv(activities_df[name], pds, csv = False, filePath = filepath+"P2")
 		split_dict[name] = broken_activities
 		print("\n")
 		
+	#print(split_dict)
 
-	print(split_dict)
+	with open('/Users/chris_egersdoerfer/Documents/GitHub/StravaProSimulator/proData-csv/json_intervals', 'w') as fp:
+		json.dump(split_dict, fp)
+
+	with open('/Users/chris_egersdoerfer/Documents/GitHub/StravaProSimulator/proData-csv/json_intervals', 'r') as fp:
+		test = json.load(fp)
+
+	print(test)
+
+
+
+
+
+
 
 
 

@@ -12,70 +12,53 @@ import math
 from sklearn.model_selection import cross_val_score
 from sklearn.pipeline import make_pipeline
 import joblib
+import json
 
 
-activities_df = pd.read_csv("/Users/chris_egersdoerfer/Documents/GitHub/StravaProSimulator/proData-csv/test_all_male_intervals_5-mile")
+def predict_results(activities_df, test_proportion = 0.2, x_scale_dump = "scale_x_test", y_scale_dump = "scale_y_test", model_dump = "trained_model_test"):
+
+	scale_x = StandardScaler()
+	scale_y = StandardScaler()
+
+	X = activities_df[['e_gain', 'e_loss', 'turns', 'distance', 'intDistance', 'intE_gain', 'intE_loss', 'intTurns']]
+	y = activities_df[['intTime']]
+	X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_proportion, random_state = 5)
+
+	scaled_x_train = np.array(scale_x.fit_transform(X_train))
+	scaled_x_test = np.array(scale_x.transform(X_test))
+	scaled_y_train = np.array(scale_y.fit_transform(y_train)).flatten()
+	scaled_y_test = np.array(scale_y.transform(y_test)).flatten()
+	scaler_x_filename = "scale_x5-mile.save"
+	scaler_y_filename = "scale_y5-mile.save"
+	joblib.dump(scale_x, "/Users/chris_egersdoerfer/Documents/GitHub/StravaProSimulator/SVR_Model/" + x_scale_dump + ".save") 
+	joblib.dump(scale_y, "/Users/chris_egersdoerfer/Documents/GitHub/StravaProSimulator/SVR_Model/" + y_scale_dump + ".save")
 
 
-scale_x = StandardScaler()
-scale_y = StandardScaler()
+	regr = SVR(kernel = 'poly', degree = 1, C = 6, epsilon = .1)
+	print(cross_val_score(regr, scaled_x_train, scaled_y_train, cv=10, scoring = "explained_variance").mean())
+	regr = SVR(kernel = 'rbf', degree = 1, C = 6, epsilon = .3)
+	print(cross_val_score(regr, scaled_x_train, scaled_y_train, cv=10, scoring = "explained_variance").mean())
+	regr = SVR(kernel = 'poly', degree = 1, C = 6, epsilon = 5)
+	print(cross_val_score(regr, scaled_x_train, scaled_y_train, cv=10, scoring = "explained_variance").mean())
+	scaled_y_train = scaled_y_train.reshape([len(scaled_y_train), 1])
+	scaled_y_test = scaled_y_test.reshape([len(scaled_y_test), 1])
+	regr = SVR(kernel = 'poly', degree = 1, C = 6, epsilon = .1)
+	regr.fit(scaled_x_train, np.transpose(scaled_y_train)[0])
+	result = regr.predict(scaled_x_test)
+	joblib.dump(regr, "/Users/chris_egersdoerfer/Documents/GitHub/StravaProSimulator/SVR_Model/" + model_dump + ".joblib")
 
-X = activities_df[['e_gain', 'e_loss', 'turns', 'distance', 'intDistance', 'intE_gain', 'intE_loss', 'intTurns']]
+	scaled_y_train = scale_y.inverse_transform(scaled_y_train)
+	scaled_x_train = scale_x.inverse_transform(scaled_x_train)
+	result = scale_y.inverse_transform(result)
+	scaled_y_test = scale_y.inverse_transform(scaled_y_test)
+	scaled_x_test = scale_x.inverse_transform(scaled_x_test)
 
-y = activities_df[['intTime']]
-
-
-
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.001, random_state = 5)
-
-print("MAX: ", max(activities_df['distance']))
-print("MIN: ", min(activities_df['distance']))
-
-
-scaled_x_train = np.array(scale_x.fit_transform(X_train))
-scaled_x_test = np.array(scale_x.transform(X_test))
-scaled_y_train = np.array(scale_y.fit_transform(y_train)).flatten()
-scaled_y_test = np.array(scale_y.transform(y_test)).flatten()
-
-scaler_x_filename = "scale_x5-mile.save"
-scaler_y_filename = "scale_y5-mile.save"
-joblib.dump(scale_x, "/Users/chris_egersdoerfer/Documents/GitHub/StravaProSimulator/SVR_Model/" + scaler_x_filename) 
-joblib.dump(scale_y, "/Users/chris_egersdoerfer/Documents/GitHub/StravaProSimulator/SVR_Model/" + scaler_y_filename)
+	return result, scaled_x_test, scaled_y_test
 
 
-regr = SVR(kernel = 'poly', degree = 1, C = 6, epsilon = .1)
-print(cross_val_score(regr, scaled_x_train, scaled_y_train, cv=10, scoring = "explained_variance").mean())
-regr = SVR(kernel = 'rbf', degree = 1, C = 6, epsilon = .3)
-print(cross_val_score(regr, scaled_x_train, scaled_y_train, cv=10, scoring = "explained_variance").mean())
-regr = SVR(kernel = 'poly', degree = 1, C = 6, epsilon = 5)
-print(cross_val_score(regr, scaled_x_train, scaled_y_train, cv=10, scoring = "explained_variance").mean())
+activities_df = pd.read_csv("/Users/chris_egersdoerfer/Documents/GitHub/StravaProSimulator/proData-csv/test_all_male_intervals_2-40")
+result, scaled_x_test, scaled_y_test = predict_results(activities_df)
 
-
-scaled_y_train = scaled_y_train.reshape([len(scaled_y_train), 1])
-scaled_y_test = scaled_y_test.reshape([len(scaled_y_test), 1])
-
-
-regr = SVR(kernel = 'poly', degree = 1, C = 6, epsilon = .1)
-
-
-
-regr.fit(scaled_x_train, np.transpose(scaled_y_train)[0])
-result = regr.predict(scaled_x_test)
-
-joblib.dump(regr, "/Users/chris_egersdoerfer/Documents/GitHub/StravaProSimulator/SVR_Model/SVRTest5-mile.joblib")
-
-#importance = regr.coef_
-# summarize feature importance
-#for i,v in enumerate(importance):
-	#print('Feature: ' + str(i) + 'Score: ' + str(v))
-
-
-scaled_y_train = scale_y.inverse_transform(scaled_y_train)
-scaled_x_train = scale_x.inverse_transform(scaled_x_train)
-
-result = scale_y.inverse_transform(result)
-scaled_y_test = scale_y.inverse_transform(scaled_y_test)
-scaled_x_test = scale_x.inverse_transform(scaled_x_test)
 meanPrediction = sum(result)/len(result)
 meanTest = sum(scaled_y_test)/len(scaled_y_test)
 print("predicted mean: " + str(meanPrediction))
@@ -125,6 +108,40 @@ print('Mean Squared Error:', math.sqrt(metrics.mean_squared_error(scaled_y_test,
 
 
 
+
+
+
+with open('/Users/chris_egersdoerfer/Documents/GitHub/StravaProSimulator/proData-csv/json_intervals', 'r') as fp:
+	split_dict = json.load(fp)
+split_intervals_df = pd.DataFrame(columns = ["time", "e_gain", "e_loss", "distance", 
+										 "turns", "intTime", 
+										 "intE_gain", "intE_loss","intDistance", 
+										 "intTurns"])
+
+pds = ProDataSimulator()
+total = len(split_dict.items())
+print("total: " + str(total))
+count = 0
+for name in split_dict:
+	pds.progress(count, total)
+	for interval in split_dict[name]:
+		for split_interval in split_dict[name][interval]:
+			a_json = json.loads(split_dict[name][interval][split_interval])
+			for key in a_json:
+				a_json[key] = [a_json[key]]
+			split_intervals_df = split_intervals_df.append(pd.DataFrame.from_dict(a_json, orient='columns'))
+	count += 1
+
+
+
+intResult, intX_test, intY_test = predict_results(split_intervals_df, test_proportion = .0001, x_scale_dump = "int_x_scalar", y_scale_dump = "int_y_scalar", model_dump = "int_svr")
+
+fig = plt.figure()
+ax = fig.add_subplot(1,1,1)
+ax.scatter(np.transpose(intX_test)[4], intY_test, color = 'g')
+ax.scatter(np.transpose(intX_test)[4], intResult, color = 'r')
+
+plt.show()
 
 
 
