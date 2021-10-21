@@ -60,7 +60,7 @@ def create_csv(all_activities, simulator, random_range = [2, 40], csv = True, fi
 		if csv:
 			activityIntervals = simulator.findIntervalsByNum(activity, intervalCount = random.randint(random_range[0],random_range[1]))
 		else:
-			activityIntervals = simulator.findIntervalsByNum(activity, intervalCount = 5)
+			activityIntervals = simulator.findIntervalsByNum(activity, intervalCount = 10)
 		activityLastRow = lastRow.copy()
 		activityLastRow.loc["turns"] = len(turns[0])
 		#activityLastRow.loc["downHillTurns"] = len(turns[0]) - up_counter

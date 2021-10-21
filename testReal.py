@@ -6,6 +6,8 @@ import pandas as pd
 from proSimulator import ProDataSimulator
 import random
 import proSimulator
+import numpy
+import seaborn as sns
 
 
 
@@ -31,7 +33,7 @@ def convert_real_tracks(all_activities, simulator, dist_range, interval_split = 
 		lastRow = activity.iloc[-1,:]
 
 		if interval_split:
-			activityIntervals = simulator.findIntervalsByNum(activity, intervalCount = 15)
+			activityIntervals = simulator.findIntervalsByNum(activity, intervalCount = 10)
 		else:
 			max_dist = dist_range[1]
 			min_dist = dist_range[0]
@@ -45,7 +47,7 @@ def convert_real_tracks(all_activities, simulator, dist_range, interval_split = 
 		routes.append(activityIntervals)
 		activityLastRow = lastRow.copy()
 		activityLastRow.loc["turns"] = len(turns[0])
-		activityLastRow = activityLastRow[["e_gain", "e_loss", "distance", "turns"]]
+		activityLastRow = activityLastRow[["e_gain", "e_loss", "distance", "turns", "Latitude", "Longitude"]]
 		interval_dict.update({name: {}})
 		for interval_name in activityIntervals:
 			interval = simulator.findAllMeasures(activityIntervals[interval_name], Time = False, 
@@ -67,6 +69,8 @@ def convert_real_tracks(all_activities, simulator, dist_range, interval_split = 
 			lastRow.loc["distance"] = activityLastRow["distance"]
 			lastRow.loc["turns"] = activityLastRow["turns"]
 			lastRow.loc["intTurns"] = len(turns[0])
+			lastRow.loc["Latitude"] = activityLastRow["Latitude"]
+			lastRow.loc["Longitude"] = activityLastRow["Longitude"]
 
 
 			measure_df = measure_df.append(lastRow, ignore_index = True)
@@ -120,6 +124,7 @@ def predict_track(test_path = "/Users/chris_egersdoerfer/Documents/GitHub/Strava
 	for name, intervals in split_dict.items():
 		interval_results = []
 		interval_distances = []
+		predict_track_df = pd.DataFrame(columns = ["int_e_gain", "int_e_loss", "int_distance", "int_turns", "Longitude", "Latitude"])
 		# iterate through results in each track
 		for int_key, int_value in intervals.items():
 			current_interval = split_dict[name][int_key]
@@ -129,15 +134,16 @@ def predict_track(test_path = "/Users/chris_egersdoerfer/Documents/GitHub/Strava
 										 "intTurns"])
 			for k, df in current_interval.items():
 				split_int_df = split_int_df.append(df, ignore_index = True)
+				temp_dict = {"int_e_gain": df['intE_gain'], "int_e_loss": df['intE_loss'], 
+							 "int_distance": df['intDistance'], "int_turns": df['intTurns'], 
+							 "Longitude": df["Longitude"], "Latitude": df["Latitude"]}
+				predict_track_df = predict_track_df.append(temp_dict, ignore_index=True)
+
 			X = split_int_df[['e_gain', 'e_loss', 'turns', 'distance', 'intDistance', 'intE_gain', 'intE_loss', 'intTurns']]
 			split_int_distances = split_int_df['intDistance'].tolist()
 			scaled_x = int_scale_x.transform(X)
 			split_int_result = int_regr.predict(scaled_x)
-			print("unscaled result")
-			print(split_int_result)
 			split_int_result = int_scale_y.inverse_transform(split_int_result)
-			print("scaled result")
-			print(split_int_result)
 			total_time = sum(split_int_result)
 			# iterate through predicted results
 			for r in range(len(split_int_result)):
@@ -158,7 +164,7 @@ def predict_track(test_path = "/Users/chris_egersdoerfer/Documents/GitHub/Strava
 
 	speed = dist/totalTime
 
-	return totalTime, speed, interval_speeds
+	return totalTime, speed, interval_speeds, predict_track_df
 
 		
 
@@ -168,21 +174,64 @@ if __name__ == "__main__":
 	print(results[0]/3600)
 	print(results[1])
 	print(results[2])
+	print(results[3])
+	#interval_speeds
+	#for i in results[2]:
+		#for i in range(10):
+
+
+	map_df = results[3]
+	print(map_df)
+
+
 	pds = ProDataSimulator(path = test_route_dir, simulate = True)
 	all_activities = pds.getAllActivities()
 	for name, activity in all_activities.items():
 		activity = pds.findAllMeasures(activity, Time = False, Speed = False, Slope = False, columnLabels = {'dist': "distance", 
 																													   'e_gain': "e_gain", 
 																													   'e_loss': "e_loss"})
-	e_g = activity['e_gain'].to_numpy()
-	e_l = activity['e_loss'].to_numpy()
+	e_g = numpy.array(map_df["int_e_gain"])
+	e_l = numpy.array(map_df["int_e_loss"])
 	elev = e_g - e_l
-	print(elev)
+	turns = map_df["int_turns"]
+	int_dist = map_df["int_distance"]
+
+	mapped_speed = []
+	interval_length = round(len(activity) / len(results[2]))
+	for i in range(len(results[2])):
+		for j in range(interval_length):
+			if i = 0:
+				
+			mapped_speed.append(speed)
+
+	print(len(activity))
+	print(len(mapped_speed))
+
+
+
+	
+	sns.set_theme()
+	sns.set_context('notebook')
 	fig = plt.figure()
-	ax = fig.add_subplot(2,1,1)
-	ax.plot(range(len(results[2])), results[2])
-	ax1 = fig.add_subplot(2,1,2)
-	ax1.plot(range(len(elev)), elev)
+
+	ax = fig.add_subplot(5,1,1)
+	ax.set_ylim(0, 30)
+	sns.lineplot(ax=ax, x=range(len(results[2])), y=results[2])
+
+	ax1 = fig.add_subplot(5,1,2)
+	sns.lineplot(ax=ax1, x=range(len(elev)), y=elev)
+
+	ax2 = fig.add_subplot(5,1,3)
+	sns.lineplot(ax=ax2, x=range(len(turns)), y=turns)
+
+	ax3 = fig.add_subplot(5,1,4)
+	sns.lineplot(ax=ax3, x=range(len(int_dist)), y=int_dist)
+
+	fig2 = plt.figure()
+	ax4 = fig2.add_subplot(1,1,1)
+	sns.scatterplot(ax=ax4, data = activity, x='Longitude', y='Latitude')#, hue='Longitude', palette='flare')#, palette='flare')
+
+
 
 	plt.show()
 

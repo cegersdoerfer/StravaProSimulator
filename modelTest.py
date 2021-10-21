@@ -40,6 +40,7 @@ def predict_results(activities_df, test_proportion = 0.2, x_scale_dump = "scale_
 	print(cross_val_score(regr, scaled_x_train, scaled_y_train, cv=10, scoring = "explained_variance").mean())
 	regr = SVR(kernel = 'poly', degree = 1, C = 6, epsilon = 5)
 	print(cross_val_score(regr, scaled_x_train, scaled_y_train, cv=10, scoring = "explained_variance").mean())
+
 	scaled_y_train = scaled_y_train.reshape([len(scaled_y_train), 1])
 	scaled_y_test = scaled_y_test.reshape([len(scaled_y_test), 1])
 	regr = SVR(kernel = 'poly', degree = 1, C = 6, epsilon = .1)
@@ -89,26 +90,56 @@ print("variance real: " + str(varianceReal1))
 print("mean error: " + str(meanError))
 print("mean percent error: " + str(meanPercentError[0].round(2)) + "%")
 fig = plt.figure()
-ax = fig.add_subplot(2,2,1)
-ax.plot(range(len(result)), scaled_y_test, color = 'r')
-ax.plot(range(len(result)), result, color = 'b')
-ax2 = fig.add_subplot(2,2,2)
-ax2.plot(range(len(result)), np.transpose(scaled_x_test)[0], color = 'b')
-ax3 = fig.add_subplot(2,2,3)
-ax3.scatter(np.transpose(scaled_x_test)[4], scaled_y_test, color = 'g')
-ax3.scatter(np.transpose(scaled_x_test)[4], result, color = 'r')
-#ax3.scatter(np.transpose(scaled_x_train)[2], scaled_y_train, color = 'g')
-ax3 = fig.add_subplot(2,2,4)
-ax3.scatter(np.transpose(scaled_x_test)[1], scaled_y_test, color = 'g')
-ax3.scatter(np.transpose(scaled_x_test)[1], result, color = 'r')
-#ax3.scatter(np.transpose(scaled_x_train)[3], scaled_y_train, color = 'g')
+
+#compare predictions
+ax = fig.add_subplot(3,3,1)
+ax.plot(range(len(result)), scaled_y_test, color = 'r', linewidth=1)
+ax.plot(range(len(result)), result, color = 'b', linewidth=1)
+
+
+#intDistance
+ax2 = fig.add_subplot(3,3,2)
+ax2.scatter(np.transpose(scaled_x_test)[3], scaled_y_test, color = 'g', marker='.', s=3)
+ax2.scatter(np.transpose(scaled_x_test)[3], result, color = 'r', marker='.', s=3)
+
+#Distance
+ax3 = fig.add_subplot(3,3,3)
+ax3.scatter(np.transpose(scaled_x_test)[4], scaled_y_test, color = 'g', marker='.', s=3)
+ax3.scatter(np.transpose(scaled_x_test)[4], result, color = 'r', marker='.', s=3)
+
+#elevation gain
+ax3 = fig.add_subplot(3,3,4)
+ax3.scatter(np.transpose(scaled_x_test)[0], scaled_y_test, color = 'g', marker='.', s=3)
+ax3.scatter(np.transpose(scaled_x_test)[0], result, color = 'r', marker='.', s=3)
+
+#intElevation gain
+ax4 = fig.add_subplot(3,3,5)
+ax4.scatter(np.transpose(scaled_x_test)[5], scaled_y_test, color = 'g', marker='.', s=3)
+ax4.scatter(np.transpose(scaled_x_test)[5], result, color = 'r', marker='.', s=3)
+
+#elevation loss
+ax5 = fig.add_subplot(3,3,6)
+ax5.scatter(np.transpose(scaled_x_test)[1], scaled_y_test, color = 'g', marker='.', s=3)
+ax5.scatter(np.transpose(scaled_x_test)[1], result, color = 'r', marker='.', s=3)
+
+#intElevation loss
+ax6 = fig.add_subplot(3,3,7)
+ax6.scatter(np.transpose(scaled_x_test)[6], scaled_y_test, color = 'g', marker='.', s=3)
+ax6.scatter(np.transpose(scaled_x_test)[6], result, color = 'r', marker='.', s=3)
+
+#turns
+ax7 = fig.add_subplot(3,3,8)
+ax7.scatter(np.transpose(scaled_x_test)[2], scaled_y_test, color = 'g', marker='.', s=3)
+ax7.scatter(np.transpose(scaled_x_test)[2], result, color = 'r', marker='.', s=3)
+
+#intTurns
+ax8 = fig.add_subplot(3,3,9)
+ax8.scatter(np.transpose(scaled_x_test)[7], scaled_y_test, color = 'g', marker='.', s=3)
+ax8.scatter(np.transpose(scaled_x_test)[7], result, color = 'r', marker='.', s=3)
+
 plt.show()
 
 print('Mean Squared Error:', math.sqrt(metrics.mean_squared_error(scaled_y_test, result)))
-
-
-
-
 
 
 with open('/Users/chris_egersdoerfer/Documents/GitHub/StravaProSimulator/proData-csv/json_intervals', 'r') as fp:
@@ -134,12 +165,55 @@ for name in split_dict:
 
 
 
-intResult, intX_test, intY_test = predict_results(split_intervals_df, test_proportion = .0001, x_scale_dump = "int_x_scalar", y_scale_dump = "int_y_scalar", model_dump = "int_svr")
+intResult, intX_test, intY_test = predict_results(split_intervals_df, test_proportion = .2, x_scale_dump = "int_x_scalar", y_scale_dump = "int_y_scalar", model_dump = "int_svr")
 
 fig = plt.figure()
-ax = fig.add_subplot(1,1,1)
-ax.scatter(np.transpose(intX_test)[4], intY_test, color = 'g')
-ax.scatter(np.transpose(intX_test)[4], intResult, color = 'r')
+
+#compare predictions
+ax = fig.add_subplot(3,3,1)
+ax.plot(range(len(intResult)), intY_test, color = 'r', linewidth=1)
+ax.plot(range(len(intResult)), intResult, color = 'b', linewidth=1)
+
+
+#intDistance
+ax2 = fig.add_subplot(3,3,2)
+ax2.scatter(np.transpose(intX_test)[3], intY_test, color = 'g', marker='.', s=3)
+ax2.scatter(np.transpose(intX_test)[3], intResult, color = 'r', marker='.', s=3)
+
+#Distance
+ax3 = fig.add_subplot(3,3,3)
+ax3.scatter(np.transpose(intX_test)[4], intY_test, color = 'g', marker='.', s=3)
+ax3.scatter(np.transpose(intX_test)[4], intResult, color = 'r', marker='.', s=3)
+
+#elevation gain
+ax3 = fig.add_subplot(3,3,4)
+ax3.scatter(np.transpose(intX_test)[0], intY_test, color = 'g', marker='.', s=3)
+ax3.scatter(np.transpose(intX_test)[0], intResult, color = 'r', marker='.', s=3)
+
+#intElevation gain
+ax4 = fig.add_subplot(3,3,5)
+ax4.scatter(np.transpose(intX_test)[5], intY_test, color = 'g', marker='.', s=3)
+ax4.scatter(np.transpose(intX_test)[5], intResult, color = 'r', marker='.', s=3)
+
+#elevation loss
+ax5 = fig.add_subplot(3,3,6)
+ax5.scatter(np.transpose(intX_test)[1], intY_test, color = 'g', marker='.', s=3)
+ax5.scatter(np.transpose(intX_test)[1], intResult, color = 'r', marker='.', s=3)
+
+#intElevation loss
+ax6 = fig.add_subplot(3,3,7)
+ax6.scatter(np.transpose(intX_test)[6], intY_test, color = 'g', marker='.', s=3)
+ax6.scatter(np.transpose(intX_test)[6], intResult, color = 'r', marker='.', s=3)
+
+#turns
+ax7 = fig.add_subplot(3,3,8)
+ax7.scatter(np.transpose(intX_test)[2], intY_test, color = 'g', marker='.', s=3)
+ax7.scatter(np.transpose(intX_test)[2], intResult, color = 'r', marker='.', s=3)
+
+#intTurns
+ax8 = fig.add_subplot(3,3,9)
+ax8.scatter(np.transpose(intX_test)[7], intY_test, color = 'g', marker='.', s=3)
+ax8.scatter(np.transpose(intX_test)[7], intResult, color = 'r', marker='.', s=3)
 
 plt.show()
 
